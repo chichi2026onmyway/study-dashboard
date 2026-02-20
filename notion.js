@@ -23,13 +23,14 @@ async function notionFetch(endpoint, body) {
 async function getStudySummary() {
   const items = [];
   let cursor = undefined;
-  // Paginate through all items
-  for (let i = 0; i < 10; i++) {
+  // Paginate through all items (limit to 3 pages = 300 items max for speed)
+  for (let i = 0; i < 3; i++) {
     const res = await notionFetch(`/databases/${DB_2026}/query`, {
       start_cursor: cursor,
       page_size: 100,
     });
-    items.push(...(res.results || []));
+    if (!res.results) break;
+    items.push(...res.results);
     if (!res.has_more) break;
     cursor = res.next_cursor;
   }
@@ -59,12 +60,13 @@ async function getDueToday() {
   // We query items and filter in code since Auto Redo is a formula
   const items = [];
   let cursor = undefined;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 3; i++) {
     const res = await notionFetch(`/databases/${DB_2026}/query`, {
       start_cursor: cursor,
       page_size: 100,
     });
-    items.push(...(res.results || []));
+    if (!res.results) break;
+    items.push(...res.results);
     if (!res.has_more) break;
     cursor = res.next_cursor;
   }
@@ -228,6 +230,111 @@ async function createCheckin(data) {
   }
 }
 
+// Get everything in one call (much faster!)
+async function getAll() {
+  // Fetch 2026 items once, reuse for summary + due
+  const items = [];
+  let cursor = undefined;
+  for (let i = 0; i < 3; i++) {
+    const res = await notionFetch(`/databases/${DB_2026}/query`, {
+      start_cursor: cursor,
+      page_size: 100,
+    });
+    if (!res.results) break;
+    items.push(...res.results);
+    if (!res.has_more) break;
+    cursor = res.next_cursor;
+  }
+
+  // Build summary from items
+  const bySubject = {};
+  let totalGreen = 0;
+  for (const item of items) {
+    const props = item.properties;
+    const subject = props.Subject?.select?.name || "Unknown";
+    const mastery = props.Mastery?.select?.name || "";
+    if (!bySubject[subject]) bySubject[subject] = { total: 0, green: 0, yellow: 0, red: 0, none: 0 };
+    bySubject[subject].total++;
+    if (mastery === "🟢") { bySubject[subject].green++; totalGreen++; }
+    else if (mastery === "🟡") bySubject[subject].yellow++;
+    else if (mastery === "🔴") bySubject[subject].red++;
+    else bySubject[subject].none++;
+  }
+
+  // Build due items from same data
+  const todayStr = new Date().toISOString().split("T")[0];
+  const due = items
+    .filter((item) => {
+      const props = item.properties;
+      const mastery = props.Mastery?.select?.name;
+      if (mastery === "🟢") return false;
+      const redoDate = props["Redo Date"]?.date?.start;
+      const autoRedo = props["Auto Redo"]?.formula?.date?.start?.split("T")[0];
+      const effectiveDate = redoDate || autoRedo;
+      if (!effectiveDate) return true;
+      return effectiveDate <= todayStr;
+    })
+    .map((item) => {
+      const props = item.properties;
+      return {
+        id: item.id,
+        name: props.Name?.title?.[0]?.plain_text || "Untitled",
+        subject: props.Subject?.select?.name || "",
+        mastery: props.Mastery?.select?.name || "",
+        type: props.Type?.select?.name || "",
+        priority: props.Priority?.select?.name || "",
+        url: item.url,
+      };
+    })
+    .sort((a, b) => {
+      const order = { "🔴 S 必须掌握": 0, "🟠 A 重要": 1, "🟡 B 建议学": 2, "🟢 C 了解即可": 3 };
+      return (order[a.priority] ?? 4) - (order[b.priority] ?? 4);
+    })
+    .slice(0, 20);
+
+  // Fetch logs and checkins in parallel
+  const [logsRes, checkinsRes] = await Promise.all([
+    DB_LOG ? notionFetch(`/databases/${DB_LOG}/query`, {
+      sorts: [{ property: "Review Date", direction: "descending" }],
+      page_size: 50,
+    }) : { results: [] },
+    DB_CHECKIN ? notionFetch(`/databases/${DB_CHECKIN}/query`, {
+      sorts: [{ property: "Date", direction: "descending" }],
+      page_size: 60,
+    }) : { results: [] },
+  ]);
+
+  const logs = (logsRes.results || []).map((item) => {
+    const props = item.properties;
+    const minutes = props["Duration (min)"]?.formula?.number || props["Time Spent (min)"]?.number || 0;
+    const title = props.Title?.title?.[0]?.plain_text || "";
+    let subject = props.Subject?.rollup?.array?.[0]?.select?.name || "";
+    if (!subject) { for (const s of ["CS","AI","HCI","SE","IR"]) { if (title.toUpperCase().includes(s)) { subject = s; break; } } }
+    return { title, date: (props["Review Date"]?.date?.start || "").split("T")[0], minutes: Math.round(minutes), subject, mastery: props.Mastery?.select?.name || "" };
+  });
+
+  const checkins = (checkinsRes.results || []).map((item) => {
+    const props = item.properties;
+    return {
+      date: props.Date?.date?.start || "",
+      minutes: props.Minutes?.number || 0,
+      mood: props.Mood?.select?.name || "",
+      cs: props.CS?.checkbox || false,
+      ai: props.AI?.checkbox || false,
+      hci: props.HCI?.checkbox || false,
+      se: props.SE?.checkbox || false,
+      ir: props.IR?.checkbox || false,
+    };
+  });
+
+  return {
+    summary: { totalItems: items.length, totalGreen, bySubject },
+    dueItems: due,
+    logs,
+    checkins,
+  };
+}
+
 export default async function handler(req, res) {
   // CORS for embed
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -235,10 +342,16 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
+  if (!NOTION_TOKEN) {
+    return res.status(500).json({ error: "NOTION_TOKEN 环境变量未设置。请在 Vercel Settings → Environment Variables 中添加。" });
+  }
+
   const action = req.query.action;
 
   try {
     switch (action) {
+      case "all":
+        return res.json(await getAll());
       case "study-summary":
         return res.json(await getStudySummary());
       case "due-today":

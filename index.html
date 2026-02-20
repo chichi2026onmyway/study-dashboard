@@ -538,41 +538,76 @@ function WeeklyPlan() {
 }
 
 // ─── PHASE PROGRESS ───
-function PhaseBar({ logData, checkins }) {
+function PhaseBar({ logData, checkins, studyData }) {
   const t = new Date(today());
   const phase = curPhase();
-  const allDates = new Set([
-    ...(logData||[]).map(l => l.date),
-    ...(checkins||[]).map(c => c.date),
-  ].filter(Boolean));
+  const phaseNum = getPhaseNum();
+
+  // Calculate real progress based on actual study data
+  const totalItems = studyData?.totalItems || 0;
+  const totalGreen = studyData?.totalGreen || 0;
+  const totalYellow = (studyData?.bySubject ? Object.values(studyData.bySubject).reduce((s,d) => s + (d.yellow||0), 0) : 0);
+  const totalRed = (studyData?.bySubject ? Object.values(studyData.bySubject).reduce((s,d) => s + (d.red||0), 0) : 0);
+  const reviewed = totalGreen + totalYellow + totalRed; // items that have been attempted
+  const studyDays = new Set([...(logData||[]).map(l=>l.date),...(checkins||[]).map(c=>c.date)].filter(Boolean)).size;
+  const totalMinutes = (logData||[]).reduce((s,l) => s + (l.minutes||0), 0);
+
+  // Phase-specific targets and progress
+  const phaseTargets = {
+    1: { label:"知识点覆盖率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc:"已学习/总项目数" },
+    2: { label:"过去问完成率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc:"至少做过一次的题目" },
+    3: { label:"掌握率", calc: () => totalItems > 0 ? Math.round(((totalGreen + totalYellow) / totalItems) * 100) : 0, desc:"🟢+🟡 / 总数" },
+    4: { label:"完全掌握率", calc: () => totalItems > 0 ? Math.round((totalGreen / totalItems) * 100) : 0, desc:"🟢 / 总数" },
+  };
+
+  const target = phaseTargets[phaseNum] || phaseTargets[1];
+  const realPct = target.calc();
+
   return (
     <div className="card">
       <div className="card-title">🎯 Phase Progress</div>
+
+      {/* Current Phase Highlight */}
+      <div style={{padding:"14px 16px",background:`${phase?.color}08`,borderRadius:12,border:`1.5px solid ${phase?.color}25`,marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <span style={{fontSize:14,fontWeight:700,color:phase?.color}}>▸ {phase?.name}</span>
+          <span className="mono" style={{fontSize:20,fontWeight:700,color:phase?.color}}>{realPct}%</span>
+        </div>
+        <div style={{fontSize:11,color:"#888",marginBottom:8}}>{phase?.desc}</div>
+        <div style={{height:6,background:"#eee",borderRadius:3,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${Math.min(realPct,100)}%`,background:phase?.color,borderRadius:3,transition:"width .8s ease"}} />
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
+          <span style={{fontSize:10,color:"#aaa"}}>{target.label}: {target.desc}</span>
+          <span style={{fontSize:10,color:"#aaa"}}>{realPct}%</span>
+        </div>
+      </div>
+
+      {/* All Phases Timeline */}
       {PHASES.map((p, i) => {
-        const s = new Date(p.start), e = new Date(p.end);
-        const total = (e-s)/864e5;
-        const el = Math.max(0, Math.min(total, (t-s)/864e5));
-        const pct = Math.round((el/total)*100);
-        const cur = p === phase, past = t > e, future = t < s;
+        const cur = i + 1 === phaseNum;
+        const past = t > new Date(p.end);
+        const future = t < new Date(p.start);
+        if (cur) return null; // already shown above
         return (
-          <div key={i} style={{
-            marginBottom:12,padding:cur?"10px 12px":"6px 12px",
-            background:cur?`${p.color}08`:"transparent",
-            borderRadius:9,border:cur?`1px solid ${p.color}25`:"1px solid transparent",
-            opacity:future?.35:1,
-          }}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-              <span style={{fontSize:12,fontWeight:cur?700:400,color:cur?p.color:"#666"}}>{cur && "▸ "}{p.name}</span>
-              <span className="mono" style={{fontSize:10,color:"#aaa"}}>{past?"✅":future?`${p.start.slice(5)}~`:`${pct}%`}</span>
+          <div key={i} style={{marginBottom:8,padding:"6px 12px",opacity:future?.3:1}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+              <span style={{fontSize:12,color:"#888"}}>{p.name}</span>
+              <span className="mono" style={{fontSize:10,color:"#bbb"}}>{past?"✅ 完了":`${p.start.slice(5)}~`}</span>
             </div>
-            {cur && <div style={{fontSize:11,color:"#888",marginBottom:6}}>{p.desc}</div>}
-            <div style={{height:3,background:"#eee",borderRadius:2}}>
-              <div style={{height:"100%",width:`${past?100:pct}%`,background:past?"#ccc":p.color,borderRadius:2,transition:"width .5s"}} />
+            <div style={{height:2,background:"#eee",borderRadius:2}}>
+              <div style={{height:"100%",width:past?"100%":"0%",background:past?"#ccc":p.color,borderRadius:2}} />
             </div>
           </div>
         );
       })}
-      <div style={{fontSize:11,color:"#999",textAlign:"center",marginTop:6}}>📅 累计学习 <b>{allDates.size}</b> 天</div>
+
+      {/* Stats Row */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:12}}>
+        <div className="stat-box"><div className="stat-label">学习天数</div><div className="stat-value">{studyDays}</div><div className="stat-sub">天</div></div>
+        <div className="stat-box"><div className="stat-label">总时间</div><div className="stat-value">{Math.round(totalMinutes/60)}</div><div className="stat-sub">小时</div></div>
+        <div className="stat-box"><div className="stat-label">已掌握</div><div className="stat-value">{totalGreen}</div><div className="stat-sub">/{totalItems} 项</div></div>
+      </div>
     </div>
   );
 }
@@ -638,19 +673,26 @@ function App() {
   const [checkins, setCheckins] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastSync, setLastSync] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [r1, r2, r3, r4] = await Promise.all([
-      api("study-summary"),
-      api("due-today"),
-      api("recent-logs"),
-      api("checkins"),
-    ]);
-    if (r1 && !r1.error) setStudyData(r1);
-    if (r2?.items) setDueItems(r2.items);
-    if (r3?.logs) setLogData(r3.logs);
-    if (r4?.checkins) setCheckins(r4.checkins);
+    setError(null);
+    try {
+      const data = await api("all");
+      if (!data) {
+        setError("无法连接到 API，检查 Vercel 部署");
+      } else if (data.error) {
+        setError(`API 错误: ${data.error}`);
+      } else {
+        if (data.summary) setStudyData(data.summary);
+        if (data.dueItems) setDueItems(data.dueItems);
+        if (data.logs) setLogData(data.logs);
+        if (data.checkins) setCheckins(data.checkins);
+      }
+    } catch(e) {
+      setError(`连接失败: ${e.message}`);
+    }
     setLastSync(new Date().toLocaleTimeString("ja-JP"));
     setLoading(false);
   }, []);
@@ -681,6 +723,14 @@ function App() {
       </div>
 
       <Countdown phase={curPhase()} />
+      {error && (
+        <div style={{marginTop:14,padding:"12px 18px",background:"#FFF3F3",border:"1px solid #FFCDD2",borderRadius:12,fontSize:12,color:"#C62828"}}>
+          ⚠️ {error}
+          <div style={{marginTop:6,fontSize:11,color:"#999"}}>
+            检查项: 1. Vercel 环境变量是否正确 → 2. Chi 页面是否添加了 Integration Connection → 3. Token 是否以 ntn_ 开头
+          </div>
+        </div>
+      )}
       <Motiv logData={logData} checkins={checkins} />
 
       <div className="grid">
@@ -694,7 +744,7 @@ function App() {
           <Progress data={studyData} loading={loading} />
           <Calendar logData={logData} checkins={checkins} />
           <WeeklyPlan />
-          <PhaseBar logData={logData} checkins={checkins} />
+          <PhaseBar logData={logData} checkins={checkins} studyData={studyData} />
           <RecentAct logData={logData} />
         </div>
       </div>
