@@ -45,7 +45,7 @@ const { useState, useEffect, useCallback, useRef } = React;
 
 // ─── CONFIG ───
 const API = "/api/notion";
-const EXAM = new Date("2026-08-10");
+const EXAM = new Date("2026-08-01");
 const SUBJECTS = [
   { id:"CS", name:"CS 情報学基礎", color:"#D4A017", accent:"#FFF8E1", icon:"💻" },
   { id:"AI", name:"AI 人工知能",   color:"#3B7DD8", accent:"#E3F2FD", icon:"🤖" },
@@ -57,17 +57,54 @@ const PHASES = [
   { name:"Phase 1: 基础扫盲", start:"2026-02-19", end:"2026-04-15", desc:"通读教材 + S级知识点", color:"#3B7DD8" },
   { name:"Phase 2: 过去问攻略", start:"2026-04-16", end:"2026-06-15", desc:"全部过去问至少做一遍", color:"#43A047" },
   { name:"Phase 3: 弱点强化", start:"2026-06-16", end:"2026-07-20", desc:"🔴🟡重做 + 模拟练习", color:"#E64A19" },
-  { name:"Phase 4: 冲刺", start:"2026-07-21", end:"2026-08-10", desc:"限时模拟 + 最终回顾", color:"#D81B60" },
+  { name:"Phase 4: 冲刺", start:"2026-07-21", end:"2026-08-01", desc:"限时模拟 + 最终回顾", color:"#D81B60" },
 ];
-const WEEKLY = [
-  {day:"Mon",label:"周一",sub:"CS",focus:"Ch1-4 基础概念",min:45,method:"📖 通读→✍️做题"},
-  {day:"Tue",label:"周二",sub:"AI",focus:"过去问+知识点",min:45,method:"✍️ 做题"},
-  {day:"Wed",label:"周三",sub:"HCI",focus:"实验设计/应用",min:45,method:"✍️ 做题+📝笔记"},
-  {day:"Thu",label:"周四",sub:"SE",focus:"测试/设计模式/UML",min:45,method:"✍️ 做题"},
-  {day:"Fri",label:"周五",sub:"CS",focus:"Ch5-8 算法/数据",min:45,method:"✍️ 做题"},
-  {day:"Sat",label:"周六",sub:"IR",focus:"过去问集中+复盘",min:120,method:"模拟"},
-  {day:"Sun",label:"周日",sub:"CS",focus:"Ch9-12+弱点补强",min:120,method:"综合复习"},
-];
+const WEEKLY_BY_PHASE = {
+  1: [ // Phase 1: 基础扫盲 — 重点通读教材、建立知识框架
+    {day:"Mon",label:"周一",sub:"CS",focus:"Ch1-4 存储/CPU/OS/网络 通读",min:45,method:"📖 通读→📝整理"},
+    {day:"Tue",label:"周二",sub:"CS",focus:"Ch5-8 算法/语言/工程/数据结构",min:45,method:"📖 通读→✍️例题"},
+    {day:"Wed",label:"周三",sub:"HCI",focus:"教材通读 + 实验设计概念整理",min:45,method:"📖 通读→📝笔记"},
+    {day:"Thu",label:"周四",sub:"SE",focus:"教材章节通读 + UML/测试理论",min:45,method:"📖 通读→📝整理"},
+    {day:"Fri",label:"周五",sub:"CS",focus:"Ch9-12 DB/图形/AI/计算理论",min:45,method:"📖 通读→✍️例题"},
+    {day:"Sat",label:"周六",sub:"AI",focus:"教材通读 + 搜索/学习/NN基础",min:120,method:"📖 通读→✍️做题"},
+    {day:"Sun",label:"周日",sub:"IR",focus:"IR教材 + 本周知识点总复习",min:120,method:"📖+🧠 回忆测试"},
+  ],
+  2: [ // Phase 2: 过去问攻略 — 大量做真题
+    {day:"Mon",label:"周一",sub:"CS",focus:"CS 过去问 (新年度优先)",min:45,method:"✍️ 做题→分析"},
+    {day:"Tue",label:"周二",sub:"AI",focus:"AI 过去问 + 错题知识点补充",min:45,method:"✍️ 做题"},
+    {day:"Wed",label:"周三",sub:"HCI",focus:"HCI 过去问 (实验设计题重点)",min:45,method:"✍️ 做题→📝笔记"},
+    {day:"Thu",label:"周四",sub:"SE",focus:"SE 过去问 + 概念回顾",min:45,method:"✍️ 做题"},
+    {day:"Fri",label:"周五",sub:"CS",focus:"CS 过去问 (旧年度/难题)",min:45,method:"✍️ 做题→分析"},
+    {day:"Sat",label:"周六",sub:"IR",focus:"IR 过去问 + 全科弱点复盘",min:120,method:"✍️ 做题→🧠回忆"},
+    {day:"Sun",label:"周日",sub:"CS",focus:"CS 综合 + 本周错题重做",min:120,method:"✍️ 重做→📝总结"},
+  ],
+  3: [ // Phase 3: 弱点强化 — 集中攻克 🔴🟡
+    {day:"Mon",label:"周一",sub:"CS",focus:"CS 🔴🟡 项目重做",min:45,method:"✍️ 重做→分析"},
+    {day:"Tue",label:"周二",sub:"AI",focus:"AI 🔴🟡 重做 + 知识点补漏",min:45,method:"✍️ 重做"},
+    {day:"Wed",label:"周三",sub:"HCI",focus:"HCI 🔴🟡 重做 + 模拟练习",min:45,method:"✍️ 重做→模拟"},
+    {day:"Thu",label:"周四",sub:"SE",focus:"SE 🔴🟡 重做 + 概念强化",min:45,method:"✍️ 重做"},
+    {day:"Fri",label:"周五",sub:"CS",focus:"CS 高频考点 + 难题专练",min:45,method:"✍️ 专题训练"},
+    {day:"Sat",label:"周六",sub:"CS",focus:"全科模拟考试 (3h限时)",min:120,method:"🧪 模拟考试"},
+    {day:"Sun",label:"周日",sub:"IR",focus:"IR 🔴🟡 + 模拟错题分析",min:120,method:"✍️ 重做→📝分析"},
+  ],
+  4: [ // Phase 4: 冲刺 — 限时模拟 + 最终确认
+    {day:"Mon",label:"周一",sub:"CS",focus:"CS 限时模拟 (90min 3题)",min:45,method:"🧪 限时模拟"},
+    {day:"Tue",label:"周二",sub:"AI",focus:"AI+HCI 限时模拟",min:45,method:"🧪 限时模拟"},
+    {day:"Wed",label:"周三",sub:"SE",focus:"SE+IR 限时模拟",min:45,method:"🧪 限时模拟"},
+    {day:"Thu",label:"周四",sub:"CS",focus:"CS 高频弱点最终确认",min:45,method:"🧠 回忆→✍️确认"},
+    {day:"Fri",label:"周五",sub:"CS",focus:"全科知识点快速回顾",min:45,method:"🧠 回忆测试"},
+    {day:"Sat",label:"周六",sub:"CS",focus:"完整模拟考试 (全真环境)",min:120,method:"🧪 全真模拟"},
+    {day:"Sun",label:"周日",sub:"CS",focus:"查漏补缺 + 心态调整",min:120,method:"📝 总结→🧘 放松"},
+  ],
+};
+function getPhaseNum() {
+  const t = new Date(today());
+  for (let i = 0; i < PHASES.length; i++) {
+    if (t >= new Date(PHASES[i].start) && t <= new Date(PHASES[i].end)) return i + 1;
+  }
+  return 1;
+}
+function getWeekly() { return WEEKLY_BY_PHASE[getPhaseNum()] || WEEKLY_BY_PHASE[1]; }
 
 const today = () => new Date().toISOString().split("T")[0];
 const daysLeft = () => Math.ceil((EXAM - new Date()) / 864e5);
@@ -273,9 +310,12 @@ function Timer({ onLog }) {
 function TodayPlan() {
   const dayMap = {0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"};
   const todayKey = dayMap[new Date().getDay()];
-  const plan = WEEKLY.find(w => w.day === todayKey);
+  const weekly = getWeekly();
+  const plan = weekly.find(w => w.day === todayKey);
   if (!plan) return null;
   const sub = SUBJECTS.find(s => s.id === plan.sub);
+  const phaseNum = getPhaseNum();
+  const phase = PHASES[phaseNum - 1];
   return (
     <div style={{background:sub?.accent,borderRadius:16,padding:"18px 22px",border:`2px solid ${sub?.color}30`}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -284,6 +324,7 @@ function TodayPlan() {
       </div>
       <div style={{fontSize:13,color:"#555"}}>{plan.focus}</div>
       <div style={{fontSize:11,color:"#999",marginTop:4}}>方法: {plan.method}</div>
+      <div style={{fontSize:10,color:phase?.color,marginTop:6,opacity:.7}}>📌 {phase?.name}</div>
     </div>
   );
 }
@@ -459,11 +500,17 @@ function Calendar({ logData, checkins }) {
 function WeeklyPlan() {
   const dayMap = {0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"};
   const todayKey = dayMap[new Date().getDay()];
+  const weekly = getWeekly();
+  const phaseNum = getPhaseNum();
+  const phase = PHASES[phaseNum - 1];
   return (
     <div className="card">
-      <div className="card-title">📋 Weekly Plan</div>
+      <div className="card-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span>📋 Weekly Plan</span>
+        <span style={{fontSize:10,color:phase?.color,textTransform:"none",letterSpacing:0}}>{phase?.name}</span>
+      </div>
       <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {WEEKLY.map(p => {
+        {weekly.map(p => {
           const sub = SUBJECTS.find(s => s.id === p.sub);
           const cur = p.day === todayKey;
           return (
@@ -482,6 +529,9 @@ function WeeklyPlan() {
             </div>
           );
         })}
+      </div>
+      <div style={{marginTop:10,padding:"8px 12px",background:"#f8f8f5",borderRadius:8,fontSize:11,color:"#888",textAlign:"center"}}>
+        📌 计划随 Phase 自动调整 · 当前: <b style={{color:phase?.color}}>{phase?.name}</b>
       </div>
     </div>
   );
@@ -607,6 +657,12 @@ function App() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => { fetchData(); }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
   const handleLog = (entry) => {
     setLogData(prev => [{ title:`${entry.subject} - ${entry.note}`, date:entry.date, minutes:entry.minutes, subject:entry.subject }, ...prev]);
   };
@@ -615,7 +671,7 @@ function App() {
     <div className="wrap">
       {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div className="mono" style={{fontSize:11,color:"#aaa"}}>{lastSync ? `同步: ${lastSync}` : "加载中..."}</div>
+        <div className="mono" style={{fontSize:11,color:"#aaa"}}>{lastSync ? `同步: ${lastSync} · 每5分钟自动刷新` : "加载中..."}</div>
         <button onClick={fetchData} disabled={loading} style={{
           background:loading?"#eee":"#1a1a2e",color:loading?"#999":"#fff",
           border:"none",borderRadius:8,padding:"7px 16px",fontSize:12,cursor:loading?"not-allowed":"pointer",fontWeight:500,
@@ -644,7 +700,7 @@ function App() {
       </div>
 
       <div style={{textAlign:"center",padding:"20px 0 10px",fontSize:10,color:"#ccc"}}>
-        京大社情 Study Dashboard · Built with ♥ for 2026.8
+        京大社情 Study Dashboard · Built with ♥ for 2026.8.1
       </div>
     </div>
   );
