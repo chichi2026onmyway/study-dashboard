@@ -554,8 +554,7 @@ function PhaseBar({ logData, checkins, studyData }) {
   const totalItems = studyData?.totalItems || 0;
   const totalGreen = studyData?.totalGreen || 0;
   const totalYellow = (studyData?.bySubject ? Object.values(studyData.bySubject).reduce((s,d) => s + (d.yellow||0), 0) : 0);
-  const totalRed = (studyData?.bySubject ? Object.values(studyData.bySubject).reduce((s,d) => s + (d.red||0), 0) : 0);
-  const reviewed = totalGreen + totalYellow + totalRed; // items that have been attempted
+  const reviewed = studyData?.totalReviewed || 0;
   const studyDays = new Set([...(logData||[]).map(l=>l.date),...(checkins||[]).map(c=>c.date)].filter(Boolean)).size;
   const totalMinutes = (logData||[]).reduce((s,l) => s + (l.minutes||0), 0);
 
