@@ -19,12 +19,11 @@ async function notionFetch(endpoint, body) {
   return res.json();
 }
 
-// Get study items summary by subject
-async function getStudySummary() {
+// Helper: fetch all items from 2026 DB (max 10 pages = 1000 items)
+async function fetchAllItems() {
   const items = [];
   let cursor = undefined;
-  // Paginate through all items (limit to 3 pages = 300 items max for speed)
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 10; i++) {  // ✅ 修复：3 → 10
     const res = await notionFetch(`/databases/${DB_2026}/query`, {
       start_cursor: cursor,
       page_size: 100,
@@ -34,16 +33,36 @@ async function getStudySummary() {
     if (!res.has_more) break;
     cursor = res.next_cursor;
   }
+  return items;
+}
+
+// Helper: check if an item has actually been studied
+function hasBeenStudied(props) {
+  const reviewCount = props["Review Count"]?.rollup?.number || 0;
+  const lastReviewed = props["Last Reviewed"]?.rollup?.date?.start;
+  return reviewCount > 0 || !!lastReviewed;
+}
+
+// Get study items summary by subject
+async function getStudySummary() {
+  const items = await fetchAllItems();
 
   const bySubject = {};
   let totalGreen = 0;
+  let totalReviewed = 0;  // ✅ 新增
   for (const item of items) {
     const props = item.properties;
     const subject = props.Subject?.select?.name || "Unknown";
     const mastery = props.Mastery?.select?.name || "";
 
-    if (!bySubject[subject]) bySubject[subject] = { total: 0, green: 0, yellow: 0, red: 0, none: 0 };
+    if (!bySubject[subject]) bySubject[subject] = { total: 0, green: 0, yellow: 0, red: 0, none: 0, reviewed: 0 };
     bySubject[subject].total++;
+
+    // ✅ 新增：只有真正学习过的才算 reviewed
+    if (hasBeenStudied(props)) {
+      bySubject[subject].reviewed++;
+      totalReviewed++;
+    }
 
     if (mastery === "🟢") { bySubject[subject].green++; totalGreen++; }
     else if (mastery === "🟡") bySubject[subject].yellow++;
@@ -51,25 +70,13 @@ async function getStudySummary() {
     else bySubject[subject].none++;
   }
 
-  return { totalItems: items.length, totalGreen, bySubject };
+  return { totalItems: items.length, totalGreen, totalReviewed, bySubject };
 }
 
 // Get items due today or overdue
 async function getDueToday() {
   const today = new Date().toISOString().split("T")[0];
-  // We query items and filter in code since Auto Redo is a formula
-  const items = [];
-  let cursor = undefined;
-  for (let i = 0; i < 3; i++) {
-    const res = await notionFetch(`/databases/${DB_2026}/query`, {
-      start_cursor: cursor,
-      page_size: 100,
-    });
-    if (!res.results) break;
-    items.push(...res.results);
-    if (!res.has_more) break;
-    cursor = res.next_cursor;
-  }
+  const items = await fetchAllItems();
 
   const due = items
     .filter((item) => {
@@ -77,11 +84,10 @@ async function getDueToday() {
       const mastery = props.Mastery?.select?.name;
       if (mastery === "🟢") return false;
 
-      // Check Redo Date (manual) or Auto Redo (formula)
       const redoDate = props["Redo Date"]?.date?.start;
       const autoRedo = props["Auto Redo"]?.formula?.date?.start?.split("T")[0];
       const effectiveDate = redoDate || autoRedo;
-      if (!effectiveDate) return true; // No date = needs review
+      if (!effectiveDate) return false;  // ✅ 修复：没有日期不算待复习
       return effectiveDate <= today;
     })
     .map((item) => {
@@ -124,13 +130,11 @@ async function getRecentLogs() {
     const mastery = props.Mastery?.select?.name || "";
     const method = props.Method?.select?.name || "";
 
-    // Try to extract subject from title or rollup
     let subject = "";
     const subjectRollup = props.Subject?.rollup?.array?.[0]?.select?.name;
     if (subjectRollup) {
       subject = subjectRollup;
     } else {
-      // Guess from title
       for (const s of ["CS", "AI", "HCI", "SE", "IR"]) {
         if (title.toUpperCase().includes(s)) { subject = s; break; }
       }
@@ -232,29 +236,25 @@ async function createCheckin(data) {
 
 // Get everything in one call (much faster!)
 async function getAll() {
-  // Fetch 2026 items once, reuse for summary + due
-  const items = [];
-  let cursor = undefined;
-  for (let i = 0; i < 3; i++) {
-    const res = await notionFetch(`/databases/${DB_2026}/query`, {
-      start_cursor: cursor,
-      page_size: 100,
-    });
-    if (!res.results) break;
-    items.push(...res.results);
-    if (!res.has_more) break;
-    cursor = res.next_cursor;
-  }
+  const items = await fetchAllItems();  // ✅ 使用统一的分页函数
 
   // Build summary from items
   const bySubject = {};
   let totalGreen = 0;
+  let totalReviewed = 0;  // ✅ 新增
   for (const item of items) {
     const props = item.properties;
     const subject = props.Subject?.select?.name || "Unknown";
     const mastery = props.Mastery?.select?.name || "";
-    if (!bySubject[subject]) bySubject[subject] = { total: 0, green: 0, yellow: 0, red: 0, none: 0 };
+    if (!bySubject[subject]) bySubject[subject] = { total: 0, green: 0, yellow: 0, red: 0, none: 0, reviewed: 0 };
     bySubject[subject].total++;
+
+    // ✅ 新增：真正学习过的统计
+    if (hasBeenStudied(props)) {
+      bySubject[subject].reviewed++;
+      totalReviewed++;
+    }
+
     if (mastery === "🟢") { bySubject[subject].green++; totalGreen++; }
     else if (mastery === "🟡") bySubject[subject].yellow++;
     else if (mastery === "🔴") bySubject[subject].red++;
@@ -271,7 +271,7 @@ async function getAll() {
       const redoDate = props["Redo Date"]?.date?.start;
       const autoRedo = props["Auto Redo"]?.formula?.date?.start?.split("T")[0];
       const effectiveDate = redoDate || autoRedo;
-      if (!effectiveDate) return true;
+      if (!effectiveDate) return false;  // ✅ 修复
       return effectiveDate <= todayStr;
     })
     .map((item) => {
@@ -328,14 +328,14 @@ async function getAll() {
   });
 
   return {
-    summary: { totalItems: items.length, totalGreen, bySubject },
+    summary: { totalItems: items.length, totalGreen, totalReviewed, bySubject },
     dueItems: due,
     logs,
     checkins,
   };
 }
 
-// Anki CSV export - generates tab-separated file for Anki import
+// Anki CSV export
 async function exportAnki(subject) {
   const allItems = [];
   let cursor;
@@ -344,14 +344,14 @@ async function exportAnki(subject) {
     select: { equals: subject },
   } : undefined;
 
-  for (let page = 0; page < 5; page++) {
+  for (let page = 0; page < 10; page++) {  // ✅ 修复：5 → 10
     const res = await notionFetch(`/databases/${DB_2026}/query`, {
       start_cursor: cursor,
       page_size: 100,
       filter,
     });
     if (!res?.results) break;
-    
+
     for (const p of res.results) {
       const props = p.properties;
       const name = props.Name?.title?.map(t => t.plain_text).join("") || "";
@@ -360,7 +360,7 @@ async function exportAnki(subject) {
       const chapter = props.Chapter?.select?.name || "";
       const mastery = props.Mastery?.select?.name || "";
       const type = props.Type?.select?.name || "";
-      
+
       if (name) {
         allItems.push({
           front: name,
@@ -369,16 +369,15 @@ async function exportAnki(subject) {
         });
       }
     }
-    
+
     if (!res.has_more) break;
     cursor = res.next_cursor;
   }
 
-  // Generate tab-separated format for Anki
-  const lines = allItems.map(item => 
+  const lines = allItems.map(item =>
     `${item.front}\t${item.back}\t${item.tags}`
   );
-  
+
   return {
     count: allItems.length,
     format: "TSV (tab-separated), columns: Front | Back | Tags",
@@ -388,7 +387,6 @@ async function exportAnki(subject) {
 }
 
 module.exports = async function handler(req, res) {
-  // CORS for embed
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -403,8 +401,8 @@ module.exports = async function handler(req, res) {
   try {
     switch (action) {
       case "ping":
-        return res.json({ 
-          ok: true, 
+        return res.json({
+          ok: true,
           token: NOTION_TOKEN ? `${NOTION_TOKEN.substring(0, 8)}...` : "MISSING",
           db2026: DB_2026 || "MISSING",
           dbLog: DB_LOG || "MISSING",
