@@ -335,7 +335,59 @@ async function getAll() {
   };
 }
 
-export default async function handler(req, res) {
+// Anki CSV export - generates tab-separated file for Anki import
+async function exportAnki(subject) {
+  const allItems = [];
+  let cursor;
+  const filter = subject ? {
+    property: "Subject",
+    select: { equals: subject },
+  } : undefined;
+
+  for (let page = 0; page < 5; page++) {
+    const res = await notionFetch(`/databases/${DB_2026}/query`, {
+      start_cursor: cursor,
+      page_size: 100,
+      filter,
+    });
+    if (!res?.results) break;
+    
+    for (const p of res.results) {
+      const props = p.properties;
+      const name = props.Name?.title?.map(t => t.plain_text).join("") || "";
+      const note = props.Note?.rich_text?.map(t => t.plain_text).join("") || "";
+      const subject = props.Subject?.select?.name || "";
+      const chapter = props.Chapter?.select?.name || "";
+      const mastery = props.Mastery?.select?.name || "";
+      const type = props.Type?.select?.name || "";
+      
+      if (name) {
+        allItems.push({
+          front: name,
+          back: note || "(no note)",
+          tags: [subject, chapter, type, mastery].filter(Boolean).join(" "),
+        });
+      }
+    }
+    
+    if (!res.has_more) break;
+    cursor = res.next_cursor;
+  }
+
+  // Generate tab-separated format for Anki
+  const lines = allItems.map(item => 
+    `${item.front}\t${item.back}\t${item.tags}`
+  );
+  
+  return {
+    count: allItems.length,
+    format: "TSV (tab-separated), columns: Front | Back | Tags",
+    instructions: "在 Anki 中: File → Import → 选择此文件 → Field separator: Tab → Fields: Front, Back, Tags",
+    data: lines.join("\n"),
+  };
+}
+
+module.exports = async function handler(req, res) {
   // CORS for embed
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -350,8 +402,25 @@ export default async function handler(req, res) {
 
   try {
     switch (action) {
+      case "ping":
+        return res.json({ 
+          ok: true, 
+          token: NOTION_TOKEN ? `${NOTION_TOKEN.substring(0, 8)}...` : "MISSING",
+          db2026: DB_2026 || "MISSING",
+          dbLog: DB_LOG || "MISSING",
+          dbCheckin: DB_CHECKIN || "MISSING",
+        });
       case "all":
         return res.json(await getAll());
+      case "anki-export":
+        const subject = req.query.subject || null;
+        const ankiData = await exportAnki(subject);
+        if (req.query.download === "1") {
+          res.setHeader("Content-Type", "text/tab-separated-values; charset=utf-8");
+          res.setHeader("Content-Disposition", `attachment; filename="anki-${subject || 'all'}-${new Date().toISOString().split('T')[0]}.txt"`);
+          return res.send(ankiData.data);
+        }
+        return res.json(ankiData);
       case "study-summary":
         return res.json(await getStudySummary());
       case "due-today":

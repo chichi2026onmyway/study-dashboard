@@ -126,10 +126,17 @@ async function api(action, body) {
       headers: body ? {"Content-Type":"application/json"} : {},
       body: body ? JSON.stringify(body) : undefined,
     });
-    return r.json();
+    const text = await r.text();
+    try {
+      return JSON.parse(text);
+    } catch(e) {
+      // Response is not JSON (probably HTML error page)
+      console.error("Non-JSON response:", text.substring(0, 200));
+      return { error: `API 返回了非 JSON 内容 (HTTP ${r.status}): "${text.substring(0, 60)}..."` };
+    }
   } catch(e) {
     console.error("API error:", e);
-    return null;
+    return { error: `网络错误: ${e.message}` };
   }
 }
 
@@ -727,7 +734,7 @@ function App() {
         <div style={{marginTop:14,padding:"12px 18px",background:"#FFF3F3",border:"1px solid #FFCDD2",borderRadius:12,fontSize:12,color:"#C62828"}}>
           ⚠️ {error}
           <div style={{marginTop:6,fontSize:11,color:"#999"}}>
-            检查项: 1. Vercel 环境变量是否正确 → 2. Chi 页面是否添加了 Integration Connection → 3. Token 是否以 ntn_ 开头
+            诊断步骤: 在浏览器打开 <a href="/api/notion?action=ping" target="_blank" style={{color:"#1976D2"}}>/api/notion?action=ping</a> → 看是否返回 JSON
           </div>
         </div>
       )}
