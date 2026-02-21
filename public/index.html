@@ -1,768 +1,907 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>京大社情 Study Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#f5f4f0;font-family:'Noto Sans JP','Noto Sans SC',-apple-system,sans-serif;color:#333;-webkit-font-smoothing:antialiased}
-  .mono{font-family:'JetBrains Mono',monospace}
-  .wrap{max-width:920px;margin:0 auto;padding:16px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-  @media(max-width:700px){.grid{grid-template-columns:1fr}}
-  .col{display:flex;flex-direction:column;gap:14px}
-  .card{background:#fff;border-radius:16px;padding:20px 22px;border:1px solid #e8e6e0}
-  .card-title{font-size:12px;color:#999;letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:14px}
-  .btn{border:none;border-radius:10px;padding:13px 0;font-size:15px;font-weight:600;cursor:pointer;width:100%;letter-spacing:1px;transition:opacity .2s}
-  .btn:active{opacity:.85}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .stat-box{text-align:center;padding:10px 6px;background:#f8f8f5;border-radius:9px}
-  .stat-label{font-size:10px;color:#999}
-  .stat-value{font-size:18px;font-weight:700;color:#1a1a2e}
-  .stat-sub{font-size:9px;color:#aaa}
-  input[type=text]{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:9px 13px;color:#ccd6f6;font-size:12px;outline:none;font-family:inherit}
-  input[type=text]::placeholder{color:#4a5072}
-  .progress-bar{height:8px;background:#f0f0f0;border-radius:4px;display:flex;overflow:hidden}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:13px;z-index:999;animation:toast-in .3s ease}
-  @keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-  .scroll-thin::-webkit-scrollbar{width:4px}
-  .scroll-thin::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px}
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --card-border: #2a2d3a;
+  --text: #e4e4e7;
+  --text-dim: #71717a;
+  --text-muted: #52525b;
+  --accent: #6366f1;
+  --accent-glow: rgba(99,102,241,0.15);
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --orange: #f97316;
+  --blue: #3b82f6;
+  --radius: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'JetBrains Mono', monospace; }
+.app { max-width: 520px; margin: 0 auto; padding: 16px 12px 80px; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 28px 0 20px;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+}
+.header-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.countdown-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 56px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+}
+.countdown-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.header-quote {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 12px;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: #3a3d4a; }
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-title span { font-size: 15px; }
+
+/* Quick Stats Row */
+.quick-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.stat-box {
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+}
+.stat-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+.stat-value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text); }
+.stat-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+/* GitHub Heatmap */
+.heatmap-wrap { overflow-x: auto; padding: 4px 0; }
+.heatmap-grid { display: flex; gap: 3px; }
+.heatmap-col { display: flex; flex-direction: column; gap: 3px; }
+.heatmap-cell {
+  width: 12px; height: 12px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  transition: background 0.15s;
+}
+.heatmap-cell:hover { outline: 1px solid rgba(255,255,255,0.2); }
+.heatmap-cell.lv1 { background: #0e4429; }
+.heatmap-cell.lv2 { background: #006d32; }
+.heatmap-cell.lv3 { background: #26a641; }
+.heatmap-cell.lv4 { background: #39d353; }
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.heatmap-legend .heatmap-cell { width: 10px; height: 10px; cursor: default; }
+.heatmap-months {
+  display: flex;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  gap: 3px;
+}
+
+/* Mastery Progress */
+.mastery-bar-wrap {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  margin: 6px 0;
+}
+.mastery-bar-seg { height: 100%; transition: width 0.6s ease; }
+.mastery-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.mastery-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Due Items */
+.due-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 10px;
+}
+.due-item:last-child { border-bottom: none; }
+.due-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.due-name { font-size: 13px; flex: 1; }
+.due-priority { font-size: 11px; color: var(--text-muted); }
+.due-mastery { font-size: 14px; }
+
+/* Phase Progress */
+.phase-highlight {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  border: 1.5px solid;
+}
+.phase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.phase-progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.phase-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+.phase-timeline {
+  margin-bottom: 8px;
+  padding: 6px 12px;
+}
+
+/* Weekly Plan */
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.week-cell {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  transition: background 0.2s;
+}
+.week-cell.today {
+  background: var(--accent-glow);
+  border: 1px solid rgba(99,102,241,0.3);
+}
+.week-day { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+.week-icon { font-size: 18px; margin-bottom: 2px; }
+.week-subject { font-size: 10px; color: var(--text-dim); }
+
+/* Timer */
+.timer-section { text-align: center; padding: 8px 0; }
+.timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 12px 0;
+}
+.timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #5558e6; }
+.btn-secondary { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+.btn-secondary:hover { background: rgba(255,255,255,0.12); }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.timer-subject-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+.pill {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.2s;
+}
+.pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+/* Recent Logs */
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 12px;
+}
+.log-item:last-child { border-bottom: none; }
+.log-title { color: var(--text); flex: 1; }
+.log-meta { color: var(--text-muted); font-size: 11px; }
+
+/* Loading & Error */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  flex-direction: column;
+  gap: 16px;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--card-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background: #2a2d3a;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--card-border);
+  padding: 4px;
+  margin-bottom: 14px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 10px;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+.fade-in-d1 { animation-delay: 0.05s; opacity: 0; }
+.fade-in-d2 { animation-delay: 0.1s; opacity: 0; }
+.fade-in-d3 { animation-delay: 0.15s; opacity: 0; }
+.fade-in-d4 { animation-delay: 0.2s; opacity: 0; }
+.fade-in-d5 { animation-delay: 0.25s; opacity: 0; }
 </style>
 </head>
 <body>
 <div id="root"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-
 <script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
+const { useState, useEffect, useRef, useCallback } = React;
 
-// ─── CONFIG ───
-const API = "/api/notion";
-const EXAM = new Date("2026-08-01");
-const SUBJECTS = [
-  { id:"CS", name:"CS 情報学基礎", color:"#D4A017", accent:"#FFF8E1", icon:"💻" },
-  { id:"AI", name:"AI 人工知能",   color:"#3B7DD8", accent:"#E3F2FD", icon:"🤖" },
-  { id:"HCI",name:"HCI 人机交互",  color:"#43A047", accent:"#E8F5E9", icon:"🖱️" },
-  { id:"SE", name:"SE 软件工程",   color:"#D81B60", accent:"#FCE4EC", icon:"⚙️" },
-  { id:"IR", name:"IR 情報検索",   color:"#E64A19", accent:"#FBE9E7", icon:"🔍" },
-];
+// ===== Config =====
+const API_BASE = "/api/notion";
+const EXAM_DATE = "2026-08-01";
 const PHASES = [
-  { name:"Phase 1: 基础扫盲", start:"2026-02-19", end:"2026-04-15", desc:"通读教材 + S级知识点", color:"#3B7DD8" },
-  { name:"Phase 2: 过去问攻略", start:"2026-04-16", end:"2026-06-15", desc:"全部过去问至少做一遍", color:"#43A047" },
-  { name:"Phase 3: 弱点强化", start:"2026-06-16", end:"2026-07-20", desc:"🔴🟡重做 + 模拟练习", color:"#E64A19" },
-  { name:"Phase 4: 冲刺", start:"2026-07-21", end:"2026-08-01", desc:"限时模拟 + 最终回顾", color:"#D81B60" },
+  { name: "Phase 1 基礎", start: "2026-02-19", end: "2026-04-15", color: "#6366f1", desc: "通読教材 + S級知識点" },
+  { name: "Phase 2 過去問", start: "2026-04-16", end: "2026-06-15", color: "#3b82f6", desc: "全部過去問" },
+  { name: "Phase 3 弱点強化", start: "2026-06-16", end: "2026-07-20", color: "#f97316", desc: "重做 + 模擬" },
+  { name: "Phase 4 衝刺", start: "2026-07-21", end: "2026-08-10", color: "#ef4444", desc: "限時模擬" },
 ];
-const WEEKLY_BY_PHASE = {
-  1: [ // Phase 1: 基础扫盲 — 重点通读教材、建立知识框架
-    {day:"Mon",label:"周一",sub:"CS",focus:"Ch1-4 存储/CPU/OS/网络 通读",min:45,method:"📖 通读→📝整理"},
-    {day:"Tue",label:"周二",sub:"CS",focus:"Ch5-8 算法/语言/工程/数据结构",min:45,method:"📖 通读→✍️例题"},
-    {day:"Wed",label:"周三",sub:"HCI",focus:"教材通读 + 实验设计概念整理",min:45,method:"📖 通读→📝笔记"},
-    {day:"Thu",label:"周四",sub:"SE",focus:"教材章节通读 + UML/测试理论",min:45,method:"📖 通读→📝整理"},
-    {day:"Fri",label:"周五",sub:"CS",focus:"Ch9-12 DB/图形/AI/计算理论",min:45,method:"📖 通读→✍️例题"},
-    {day:"Sat",label:"周六",sub:"AI",focus:"教材通读 + 搜索/学习/NN基础",min:120,method:"📖 通读→✍️做题"},
-    {day:"Sun",label:"周日",sub:"IR",focus:"IR教材 + 本周知识点总复习",min:120,method:"📖+🧠 回忆测试"},
-  ],
-  2: [ // Phase 2: 过去问攻略 — 大量做真题
-    {day:"Mon",label:"周一",sub:"CS",focus:"CS 过去问 (新年度优先)",min:45,method:"✍️ 做题→分析"},
-    {day:"Tue",label:"周二",sub:"AI",focus:"AI 过去问 + 错题知识点补充",min:45,method:"✍️ 做题"},
-    {day:"Wed",label:"周三",sub:"HCI",focus:"HCI 过去问 (实验设计题重点)",min:45,method:"✍️ 做题→📝笔记"},
-    {day:"Thu",label:"周四",sub:"SE",focus:"SE 过去问 + 概念回顾",min:45,method:"✍️ 做题"},
-    {day:"Fri",label:"周五",sub:"CS",focus:"CS 过去问 (旧年度/难题)",min:45,method:"✍️ 做题→分析"},
-    {day:"Sat",label:"周六",sub:"IR",focus:"IR 过去问 + 全科弱点复盘",min:120,method:"✍️ 做题→🧠回忆"},
-    {day:"Sun",label:"周日",sub:"CS",focus:"CS 综合 + 本周错题重做",min:120,method:"✍️ 重做→📝总结"},
-  ],
-  3: [ // Phase 3: 弱点强化 — 集中攻克 🔴🟡
-    {day:"Mon",label:"周一",sub:"CS",focus:"CS 🔴🟡 项目重做",min:45,method:"✍️ 重做→分析"},
-    {day:"Tue",label:"周二",sub:"AI",focus:"AI 🔴🟡 重做 + 知识点补漏",min:45,method:"✍️ 重做"},
-    {day:"Wed",label:"周三",sub:"HCI",focus:"HCI 🔴🟡 重做 + 模拟练习",min:45,method:"✍️ 重做→模拟"},
-    {day:"Thu",label:"周四",sub:"SE",focus:"SE 🔴🟡 重做 + 概念强化",min:45,method:"✍️ 重做"},
-    {day:"Fri",label:"周五",sub:"CS",focus:"CS 高频考点 + 难题专练",min:45,method:"✍️ 专题训练"},
-    {day:"Sat",label:"周六",sub:"CS",focus:"全科模拟考试 (3h限时)",min:120,method:"🧪 模拟考试"},
-    {day:"Sun",label:"周日",sub:"IR",focus:"IR 🔴🟡 + 模拟错题分析",min:120,method:"✍️ 重做→📝分析"},
-  ],
-  4: [ // Phase 4: 冲刺 — 限时模拟 + 最终确认
-    {day:"Mon",label:"周一",sub:"CS",focus:"CS 限时模拟 (90min 3题)",min:45,method:"🧪 限时模拟"},
-    {day:"Tue",label:"周二",sub:"AI",focus:"AI+HCI 限时模拟",min:45,method:"🧪 限时模拟"},
-    {day:"Wed",label:"周三",sub:"SE",focus:"SE+IR 限时模拟",min:45,method:"🧪 限时模拟"},
-    {day:"Thu",label:"周四",sub:"CS",focus:"CS 高频弱点最终确认",min:45,method:"🧠 回忆→✍️确认"},
-    {day:"Fri",label:"周五",sub:"CS",focus:"全科知识点快速回顾",min:45,method:"🧠 回忆测试"},
-    {day:"Sat",label:"周六",sub:"CS",focus:"完整模拟考试 (全真环境)",min:120,method:"🧪 全真模拟"},
-    {day:"Sun",label:"周日",sub:"CS",focus:"查漏补缺 + 心态调整",min:120,method:"📝 总结→🧘 放松"},
-  ],
-};
-function getPhaseNum() {
-  const t = new Date(today());
+const SUBJECTS = ["CS", "AI", "HCI", "SE", "IR"];
+const SUBJECT_ICONS = { CS: "💻", AI: "🤖", HCI: "🖱️", SE: "⚙️", IR: "🔍" };
+const SUBJECT_COLORS = { CS: "#6366f1", AI: "#3b82f6", HCI: "#22c55e", SE: "#f97316", IR: "#eab308" };
+const WEEK_PLAN = [
+  { day: "月", icon: "💻", subject: "CS", focus: "基礎" },
+  { day: "火", icon: "🤖", subject: "AI", focus: "演習" },
+  { day: "水", icon: "🖱️", subject: "HCI", focus: "設計" },
+  { day: "木", icon: "⚙️", subject: "SE", focus: "理論" },
+  { day: "金", icon: "💻", subject: "CS", focus: "算法" },
+  { day: "土", icon: "🔍", subject: "IR+総合", focus: "過去問" },
+  { day: "日", icon: "📚", subject: "総合", focus: "補強" },
+];
+
+// ===== Helpers =====
+function todayStr() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().split("T")[0];
+}
+
+function curPhase() {
+  const t = new Date(todayStr());
   for (let i = 0; i < PHASES.length; i++) {
-    if (t >= new Date(PHASES[i].start) && t <= new Date(PHASES[i].end)) return i + 1;
+    if (t >= new Date(PHASES[i].start) && t <= new Date(PHASES[i].end)) return { ...PHASES[i], num: i + 1 };
   }
-  return 1;
-}
-function getWeekly() { return WEEKLY_BY_PHASE[getPhaseNum()] || WEEKLY_BY_PHASE[1]; }
-
-const today = () => new Date().toISOString().split("T")[0];
-const daysLeft = () => Math.ceil((EXAM - new Date()) / 864e5);
-const curPhase = () => {
-  const t = new Date(today());
-  return PHASES.find(p => t >= new Date(p.start) && t <= new Date(p.end)) || PHASES[0];
-};
-const fmtTime = (s) => {
-  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
-  return h > 0
-    ? `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
-    : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
-};
-
-async function api(action, body) {
-  try {
-    const r = await fetch(`${API}?action=${action}`, {
-      method: body ? "POST" : "GET",
-      headers: body ? {"Content-Type":"application/json"} : {},
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const text = await r.text();
-    try {
-      return JSON.parse(text);
-    } catch(e) {
-      // Response is not JSON (probably HTML error page)
-      console.error("Non-JSON response:", text.substring(0, 200));
-      return { error: `API 返回了非 JSON 内容 (HTTP ${r.status}): "${text.substring(0, 60)}..."` };
-    }
-  } catch(e) {
-    console.error("API error:", e);
-    return { error: `网络错误: ${e.message}` };
-  }
+  return { ...PHASES[0], num: 1 };
 }
 
-// ─── COUNTDOWN BANNER ───
-function Countdown({ phase }) {
-  const d = daysLeft();
-  const urg = d<=30?"#C62828":d<=90?"#E65100":"#1a1a2e";
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+// ===== Components =====
+
+function Header({ data }) {
+  const days = data?.summary?.daysUntilExam ?? "—";
   return (
-    <div style={{background:`linear-gradient(135deg,${urg},${urg}dd)`,borderRadius:18,padding:"18px 24px",color:"#fff",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
-      <div>
-        <div className="mono" style={{fontSize:11,opacity:.65,letterSpacing:2,textTransform:"uppercase"}}>京都大学 社会情報学 2026.8 入試</div>
-        <div style={{fontSize:12,opacity:.45,marginTop:4}}>{phase?.name} — {phase?.desc}</div>
+    <div className="header fade-in">
+      <div className="header-title">京大 社会情報学 2026.8</div>
+      <div className="countdown-num">{days}</div>
+      <div className="countdown-label">days until exam</div>
+      <div className="header-quote">「継続は力なり」— 毎日15分でも、やらないよりずっと強い</div>
+    </div>
+  );
+}
+
+function QuickStats({ data }) {
+  const stats = data?.calendarStats || {};
+  const summary = data?.summary || {};
+  return (
+    <div className="quick-stats fade-in fade-in-d1">
+      <div className="stat-box">
+        <div className="stat-label">🔥 連続</div>
+        <div className="stat-value">{stats.streak || 0}</div>
+        <div className="stat-sub">日</div>
       </div>
-      <div style={{textAlign:"right"}}>
-        <div className="mono" style={{fontSize:48,fontWeight:800,lineHeight:1}}>{d}</div>
-        <div style={{fontSize:11,opacity:.6}}>days left</div>
+      <div className="stat-box">
+        <div className="stat-label">📚 今月</div>
+        <div className="stat-value">{stats.monthDays || 0}</div>
+        <div className="stat-sub">日 / {Math.round((stats.monthMinutes || 0) / 60)}h</div>
+      </div>
+      <div className="stat-box">
+        <div className="stat-label">✅ 掌握</div>
+        <div className="stat-value">{summary.totalGreen || 0}</div>
+        <div className="stat-sub">/ {summary.totalItems || 0}</div>
       </div>
     </div>
   );
 }
 
-// ─── MOTIVATIONAL BLOCK ───
-function Motiv({ logData, checkins }) {
-  const totalH = Math.round(((checkins||[]).reduce((s,c)=>s+(c.minutes||0),0) + (logData||[]).reduce((s,l)=>s+(l.minutes||0),0)) / 60);
-  const quotes = ["一日一歩、千里の道も","継続は力なり","今日の一問が、合格への一歩","努力は裏切らない","京大で待ってるよ","できると信じれば、半分は達成したも同然"];
-  const q = quotes[new Date().getDate() % quotes.length];
-  return (
-    <div style={{background:"linear-gradient(135deg,#fdfcfb,#e8ddd0)",borderRadius:16,padding:"16px 22px",border:"1px solid #e0d5c9",textAlign:"center",marginTop:14}}>
-      <div style={{fontSize:16,fontWeight:300,color:"#5D4E37",fontStyle:"italic",letterSpacing:1}}>「{q}」</div>
-      <div style={{fontSize:11,color:"#A08B6F",marginTop:8}}>累计约 <b>{totalH}</b> 小时 · 距考试 <b>{daysLeft()}</b> 天</div>
-    </div>
-  );
-}
+function Heatmap({ checkins }) {
+  const [tooltip, setTooltip] = useState(null);
+  const today = todayStr();
 
-// ─── STUDY TIMER ───
-function Timer({ onLog }) {
-  const [run, setRun] = useState(false);
-  const [sec, setSec] = useState(0);
-  const [subj, setSubj] = useState("CS");
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null);
-  const startRef = useRef(null);
-  const intervalRef = useRef(null);
+  // Build date→minutes map
+  const dateMap = {};
+  (checkins || []).forEach(c => {
+    if (c.date) dateMap[c.date] = (dateMap[c.date] || 0) + (c.minutes || 0);
+  });
 
-  useEffect(() => {
-    if (run) {
-      intervalRef.current = setInterval(() => setSec(s => s + 1), 1000);
-    } else {
-      clearInterval(intervalRef.current);
+  // Generate last 20 weeks (140 days)
+  const weeks = [];
+  const endDate = new Date(today);
+  // Go to next Saturday to end the grid
+  endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - 20 * 7 + 1);
+
+  let d = new Date(startDate);
+  let currentWeek = [];
+  while (d <= endDate) {
+    const ds = d.toISOString().split("T")[0];
+    const mins = dateMap[ds] || 0;
+    const future = ds > today;
+    let level = 0;
+    if (!future && mins > 0) {
+      if (mins <= 30) level = 1;
+      else if (mins <= 60) level = 2;
+      else if (mins <= 120) level = 3;
+      else level = 4;
     }
-    return () => clearInterval(intervalRef.current);
-  }, [run]);
-
-  // Keep screen awake while timer is running
-  useEffect(() => {
-    let wakeLock = null;
-    if (run && navigator.wakeLock) {
-      navigator.wakeLock.request("screen").then(wl => { wakeLock = wl; }).catch(() => {});
+    currentWeek.push({ date: ds, mins, level, future });
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
     }
-    return () => { wakeLock?.release(); };
-  }, [run]);
+    d.setDate(d.getDate() + 1);
+  }
+  if (currentWeek.length > 0) weeks.push(currentWeek);
 
-  const go = () => {
-    setRun(true);
-    startRef.current = new Date();
-    setSec(0);
-    setResult(null);
-  };
-
-  const stop = async () => {
-    setRun(false);
-    const mins = Math.max(1, Math.round(sec / 60));
-    setSaving(true);
-    setResult(null);
-    const r = await api("create-log", {
-      title: `${subj} 复习 ${today()} - ${note || "日常复习"}`,
-      date: today(),
-      minutes: mins,
-      method: "✍️ 做题",
-      startTime: startRef.current?.toISOString(),
-      endTime: new Date().toISOString(),
-    });
-    setSaving(false);
-    if (r?.success) {
-      setResult({ ok: true, minutes: mins });
-      onLog?.({ subject: subj, minutes: mins, date: today(), note });
-    } else {
-      setResult({ ok: false });
+  // Month labels
+  const months = [];
+  let lastMonth = -1;
+  weeks.forEach((w, i) => {
+    const m = new Date(w[0].date).getMonth();
+    if (m !== lastMonth) {
+      months.push({ index: i, label: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"][m] });
+      lastMonth = m;
     }
-    setNote("");
-  };
-
-  const reset = () => { setRun(false); setSec(0); setResult(null); };
-  const sub = SUBJECTS.find(s => s.id === subj);
-  const pct = Math.min((sec / (45 * 60)) * 100, 100);
-  const isOvertime = sec > 45 * 60;
+  });
 
   return (
-    <div style={{background:"linear-gradient(135deg,#13111a 0%,#1a1833 50%,#0d1b3e 100%)",borderRadius:18,padding:"24px 26px",color:"#fff",position:"relative",overflow:"hidden"}}>
-      {/* Progress bar at top */}
-      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"#222"}}>
-        <div style={{height:"100%",width:`${pct}%`,background:isOvertime?"#C62828":sub?.color,transition:"width 1s linear",borderRadius:"18px 0 0 0"}} />
-      </div>
-
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <span className="mono" style={{fontSize:11,color:"#6b7094",letterSpacing:2,textTransform:"uppercase"}}>⏱ Study Timer</span>
-        <span className="mono" style={{fontSize:11,color:"#4a5072",background:"rgba(255,255,255,.04)",borderRadius:8,padding:"3px 10px"}}>
-          {isOvertime ? "🔥 加时中!" : "目标 45min"}
-        </span>
-      </div>
-
-      {/* Time Display */}
-      <div className="mono" style={{
-        fontSize:60,fontWeight:200,textAlign:"center",letterSpacing:6,
-        color:run?"#e6f1ff":"#4a5072",
-        textShadow:run?`0 0 80px ${sub?.color}40, 0 0 30px ${sub?.color}20`:"none",
-        margin:"4px 0 18px",transition:"all .3s",
-      }}>
-        {fmtTime(sec)}
-      </div>
-
-      {/* Subject Pills */}
-      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
-        {SUBJECTS.map(s => (
-          <button key={s.id} onClick={() => !run && setSubj(s.id)} style={{
-            background:subj===s.id?s.color:"rgba(255,255,255,.05)",
-            color:subj===s.id?"#fff":"#6b7094",
-            border:"none",borderRadius:7,padding:"6px 14px",fontSize:12,
-            cursor:run?"not-allowed":"pointer",
-            opacity:run && subj!==s.id?.2:1,
-            fontWeight:subj===s.id?600:400,transition:"all .2s",
-          }}>{s.icon} {s.id}</button>
-        ))}
-      </div>
-
-      {/* Note Input */}
-      {!run && (
-        <input type="text" placeholder="复习内容 (如: 2024.8 CS Q1)" value={note}
-          onChange={e => setNote(e.target.value)}
-          style={{marginBottom:12}} />
-      )}
-
-      {/* Action Buttons */}
-      <div style={{display:"flex",gap:8}}>
-        {!run ? (
-          <button onClick={go} className="btn" style={{background:sub?.color,color:"#fff"}}>
-            ▶ 开始复习
-          </button>
-        ) : (
-          <>
-            <button onClick={stop} disabled={saving} className="btn" style={{background:saving?"#555":"#C62828",color:"#fff",flex:3}}>
-              {saving ? "⏳ 记录到Notion..." : "⏹ 结束 → 记录到Notion"}
-            </button>
-            <button onClick={reset} className="btn" style={{background:"rgba(255,255,255,.08)",color:"#888",flex:1,fontSize:12}}>
-              ✕ 取消
-            </button>
-          </>
+    <div className="card fade-in fade-in-d2">
+      <div className="card-title"><span>📅</span> 学習カレンダー</div>
+      <div className="heatmap-wrap" style={{ position: "relative" }}>
+        <div className="heatmap-months" style={{ paddingLeft: 0 }}>
+          {months.map((m, i) => (
+            <span key={i} style={{ marginLeft: m.index * 15, position: "absolute" }}>{m.label}</span>
+          ))}
+        </div>
+        <div className="heatmap-grid" style={{ marginTop: 18 }}>
+          {weeks.map((week, wi) => (
+            <div className="heatmap-col" key={wi}>
+              {week.map((cell, di) => (
+                <div
+                  key={di}
+                  className={`heatmap-cell ${cell.future ? "" : cell.level > 0 ? `lv${cell.level}` : ""}`}
+                  style={cell.future ? { opacity: 0.3 } : {}}
+                  title={`${cell.date}: ${cell.mins}分`}
+                  onMouseEnter={(e) => setTooltip({ x: e.clientX, y: e.clientY, text: `${cell.date}: ${cell.mins}分` })}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        {tooltip && (
+          <div className="tooltip" style={{ left: tooltip.x + 10, top: tooltip.y - 30, position: "fixed" }}>
+            {tooltip.text}
+          </div>
         )}
       </div>
-
-      {/* Result Toast */}
-      {result && (
-        <div style={{
-          marginTop:10,padding:"8px 14px",borderRadius:8,fontSize:12,textAlign:"center",
-          background:result.ok?"rgba(67,160,71,.15)":"rgba(198,40,40,.15)",
-          color:result.ok?"#81C784":"#EF9A9A",
-        }}>
-          {result.ok ? `✅ 已记录到Notion! (${result.minutes}分钟)` : "⚠️ 记录失败，请手动在Notion记录"}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── TODAY'S PLAN ───
-function TodayPlan() {
-  const dayMap = {0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"};
-  const todayKey = dayMap[new Date().getDay()];
-  const weekly = getWeekly();
-  const plan = weekly.find(w => w.day === todayKey);
-  if (!plan) return null;
-  const sub = SUBJECTS.find(s => s.id === plan.sub);
-  const phaseNum = getPhaseNum();
-  const phase = PHASES[phaseNum - 1];
-  return (
-    <div style={{background:sub?.accent,borderRadius:16,padding:"18px 22px",border:`2px solid ${sub?.color}30`}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <span style={{fontSize:14,fontWeight:700,color:sub?.color}}>{sub?.icon} 今日: {plan.sub}</span>
-        <span className="mono" style={{fontSize:12,color:"#999",background:"#fff",borderRadius:6,padding:"2px 8px"}}>{plan.min}min</span>
-      </div>
-      <div style={{fontSize:13,color:"#555"}}>{plan.focus}</div>
-      <div style={{fontSize:11,color:"#999",marginTop:4}}>方法: {plan.method}</div>
-      <div style={{fontSize:10,color:phase?.color,marginTop:6,opacity:.7}}>📌 {phase?.name}</div>
-    </div>
-  );
-}
-
-// ─── TODAY'S DUE ITEMS ───
-function TodayDue({ items, loading }) {
-  if (loading) return <div className="card"><div className="card-title">📋 今日待复习</div><div style={{textAlign:"center",padding:30,color:"#999"}}>加载中...</div></div>;
-  const list = items || [];
-  return (
-    <div className="card">
-      <div className="card-title">📋 今日待复习 ({list.length})</div>
-      {list.length === 0 ? (
-        <div style={{textAlign:"center",padding:20,color:"#bbb",fontSize:13}}>
-          {items ? "✅ 今日没有到期项目！" : "点击 🔄 加载数据"}
-        </div>
-      ) : (
-        <div className="scroll-thin" style={{display:"flex",flexDirection:"column",gap:6,maxHeight:280,overflowY:"auto"}}>
-          {list.map((item, i) => {
-            const sub = SUBJECTS.find(s => s.id === item.subject);
-            return (
-              <a key={i} href={item.url} target="_blank" rel="noopener" style={{
-                display:"flex",alignItems:"center",gap:10,padding:"8px 12px",
-                borderRadius:8,background:sub?.accent||"#f5f5f5",
-                borderLeft:`3px solid ${sub?.color||"#ccc"}`,
-                textDecoration:"none",color:"inherit",transition:"opacity .2s",
-              }}>
-                <span style={{fontSize:14}}>{sub?.icon}</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:500,color:"#333",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</div>
-                  <div style={{fontSize:11,color:"#999"}}>{item.type} · {item.priority}</div>
-                </div>
-                <span style={{fontSize:16}}>{item.mastery||"⬜"}</span>
-              </a>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── MASTERY PROGRESS ───
-function Progress({ data, loading }) {
-  if (loading) return <div className="card"><div className="card-title">📊 Mastery Progress</div><div style={{textAlign:"center",padding:30,color:"#999"}}>加载中...</div></div>;
-  if (!data) return <div className="card"><div className="card-title">📊 Mastery Progress</div><div style={{textAlign:"center",padding:30,color:"#bbb"}}>点击 🔄 加载</div></div>;
-  const subjects = data.bySubject || {};
-  return (
-    <div className="card">
-      <div className="card-title">📊 Mastery Progress</div>
-      <div style={{display:"flex",flexDirection:"column",gap:12}}>
-        {SUBJECTS.map(s => {
-          const d = subjects[s.id] || {total:0,green:0,yellow:0,red:0,none:0};
-          const t = d.total || 1;
-          return (
-            <div key={s.id}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                <span style={{fontSize:13,fontWeight:600,color:"#333"}}>{s.icon} {s.id}</span>
-                <span className="mono" style={{fontSize:11,color:"#999"}}>🟢{d.green} 🟡{d.yellow} 🔴{d.red} ⬜{d.none}</span>
-              </div>
-              <div className="progress-bar">
-                <div style={{width:`${(d.green/t)*100}%`,background:"#66BB6A",transition:"width .5s"}} />
-                <div style={{width:`${(d.yellow/t)*100}%`,background:"#FFA726",transition:"width .5s"}} />
-                <div style={{width:`${(d.red/t)*100}%`,background:"#EF5350",transition:"width .5s"}} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {data.totalItems > 0 && (
-        <div style={{marginTop:14,padding:"10px 14px",background:"#f8f8f5",borderRadius:10,fontSize:12,color:"#666",textAlign:"center"}}>
-          共 <b>{data.totalItems}</b> 个学习项目 · 🟢 掌握 <b>{data.totalGreen||0}</b> · 完成率 <b>{Math.round(((data.totalGreen||0)/data.totalItems)*100)}%</b>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── CALENDAR HEATMAP ───
-function Calendar({ logData, checkins }) {
-  const now = new Date();
-  const [mo, setMo] = useState(now.getMonth());
-  const [yr, setYr] = useState(now.getFullYear());
-  const months = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
-  const wk = ["日","月","火","水","木","金","土"];
-
-  const first = new Date(yr, mo, 1);
-  const last = new Date(yr, mo + 1, 0);
-  const cells = [];
-  for (let i = 0; i < first.getDay(); i++) cells.push(null);
-  for (let d = 1; d <= last.getDate(); d++) cells.push(d);
-
-  // Merge log data and check-in data
-  const byDate = {};
-  (logData || []).forEach(l => {
-    if (!l.date) return;
-    if (!byDate[l.date]) byDate[l.date] = {count:0, minutes:0};
-    byDate[l.date].count++;
-    byDate[l.date].minutes += (l.minutes || 0);
-  });
-  (checkins || []).forEach(c => {
-    if (!c.date) return;
-    if (!byDate[c.date]) byDate[c.date] = {count:0, minutes:0};
-    byDate[c.date].minutes = Math.max(byDate[c.date].minutes, c.minutes || 0);
-    if (c.mood) byDate[c.date].mood = c.mood;
-  });
-
-  const prev = () => { if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1); };
-  const next = () => { if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1); };
-
-  // Streak
-  let streak = 0;
-  const dd = new Date(now);
-  for (let i = 0; i < 365; i++) {
-    const ds = dd.toISOString().split("T")[0];
-    if (byDate[ds] && byDate[ds].minutes > 0) streak++;
-    else if (i > 0) break; // Allow today to be incomplete
-    else break;
-    dd.setDate(dd.getDate() - 1);
-  }
-
-  const moKey = `${yr}-${String(mo+1).padStart(2,"0")}`;
-  const moMin = Object.entries(byDate).filter(([k]) => k.startsWith(moKey)).reduce((s,[,v]) => s+v.minutes, 0);
-  const moDays = Object.entries(byDate).filter(([k]) => k.startsWith(moKey) && byDate[k].minutes > 0).length;
-  const todayStr = today();
-  const todayMin = byDate[todayStr]?.minutes || 0;
-
-  return (
-    <div className="card">
-      <div className="card-title">📆 Study Calendar</div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <button onClick={prev} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#999",padding:"4px 8px"}}>◂</button>
-        <span style={{fontSize:14,fontWeight:600}}>{yr}年{months[mo]}</span>
-        <button onClick={next} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#999",padding:"4px 8px"}}>▸</button>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,textAlign:"center"}}>
-        {wk.map(w => <div key={w} style={{fontSize:10,color:"#bbb",padding:3}}>{w}</div>)}
-        {cells.map((day, i) => {
-          if (day === null) return <div key={`e${i}`}/>;
-          const ds = `${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-          const info = byDate[ds];
-          const isT = ds === todayStr;
-          const isFuture = new Date(ds) > now;
-          const intensity = info ? Math.min((info.minutes || 0) / 90, 1) : 0;
-          const bg = info && info.minutes > 0
-            ? `rgba(67,160,71,${0.15 + intensity * 0.65})`
-            : isT ? "#1a1a2e" : "transparent";
-          return (
-            <div key={i} title={info ? `${info.minutes}min · ${info.count || 0}回 ${info.mood || ""}` : ""}
-              style={{padding:"5px 0",borderRadius:6,fontSize:12,
-                background:bg,
-                color: isT ? "#fff" : info && info.minutes > 0 ? "#1B5E20" : isFuture ? "#ddd" : "#888",
-                fontWeight: isT ? 700 : 400,
-                cursor: info ? "help" : "default",
-                position:"relative",
-              }}>
-              {day}
-              {info && info.minutes > 0 && <div style={{fontSize:7,marginTop:1,opacity:.8}}>{info.minutes}m</div>}
-            </div>
-          );
-        })}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginTop:14}}>
-        <div className="stat-box"><div className="stat-label">今日</div><div className="stat-value">{todayMin}m</div><div className="stat-sub">{todayMin>=45?"✅ 达标":`差${Math.max(0,45-todayMin)}m`}</div></div>
-        <div className="stat-box"><div className="stat-label">本月</div><div className="stat-value">{Math.round(moMin/60)}h</div><div className="stat-sub">{moDays}天/{last.getDate()}天</div></div>
-        <div className="stat-box"><div className="stat-label">连续</div><div className="stat-value">{streak}天</div><div className="stat-sub">{streak>=14?"🏆":streak>=7?"🔥":streak>=3?"👍":"💪"}</div></div>
-        <div className="stat-box"><div className="stat-label">总计</div><div className="stat-value">{Object.keys(byDate).filter(k=>byDate[k].minutes>0).length}</div><div className="stat-sub">学习天数</div></div>
+      <div className="heatmap-legend">
+        <span>少</span>
+        <div className="heatmap-cell" />
+        <div className="heatmap-cell lv1" />
+        <div className="heatmap-cell lv2" />
+        <div className="heatmap-cell lv3" />
+        <div className="heatmap-cell lv4" />
+        <span>多</span>
       </div>
     </div>
   );
 }
 
-// ─── WEEKLY PLAN ───
-function WeeklyPlan() {
-  const dayMap = {0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"};
-  const todayKey = dayMap[new Date().getDay()];
-  const weekly = getWeekly();
-  const phaseNum = getPhaseNum();
-  const phase = PHASES[phaseNum - 1];
-  return (
-    <div className="card">
-      <div className="card-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span>📋 Weekly Plan</span>
-        <span style={{fontSize:10,color:phase?.color,textTransform:"none",letterSpacing:0}}>{phase?.name}</span>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {weekly.map(p => {
-          const sub = SUBJECTS.find(s => s.id === p.sub);
-          const cur = p.day === todayKey;
-          return (
-            <div key={p.day} style={{
-              display:"flex",alignItems:"center",gap:10,padding:"7px 10px",
-              borderRadius:8,
-              background:cur?`${sub?.color}0d`:"transparent",
-              border:cur?`1.5px solid ${sub?.color}30`:"1.5px solid transparent",
-            }}>
-              <span className="mono" style={{width:28,fontSize:11,fontWeight:cur?800:400,color:cur?sub?.color:"#aaa"}}>{p.label}</span>
-              <span style={{width:7,height:7,borderRadius:"50%",background:sub?.color,opacity:cur?1:.3,flexShrink:0}} />
-              <span style={{flex:1,fontSize:12,fontWeight:cur?600:400,color:cur?"#333":"#888"}}>
-                {sub?.icon} {p.sub} <span style={{color:"#bbb",fontWeight:400,marginLeft:4}}>{p.focus}</span>
-              </span>
-              <span className="mono" style={{fontSize:10,color:"#bbb"}}>{p.min}m</span>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{marginTop:10,padding:"8px 12px",background:"#f8f8f5",borderRadius:8,fontSize:11,color:"#888",textAlign:"center"}}>
-        📌 计划随 Phase 自动调整 · 当前: <b style={{color:phase?.color}}>{phase?.name}</b>
-      </div>
-    </div>
-  );
-}
-
-// ─── PHASE PROGRESS ───
-function PhaseBar({ logData, checkins, studyData }) {
-  const t = new Date(today());
-  const phase = curPhase();
-  const phaseNum = getPhaseNum();
-
-  // Calculate real progress based on actual study data
-  const totalItems = studyData?.totalItems || 0;
-  const totalGreen = studyData?.totalGreen || 0;
-  const totalYellow = (studyData?.bySubject ? Object.values(studyData.bySubject).reduce((s,d) => s + (d.yellow||0), 0) : 0);
-  const reviewed = studyData?.totalReviewed || 0;
-  const studyDays = new Set([...(logData||[]).map(l=>l.date),...(checkins||[]).map(c=>c.date)].filter(Boolean)).size;
-  const totalMinutes = (logData||[]).reduce((s,l) => s + (l.minutes||0), 0);
-
-  // Phase-specific targets and progress
-  const phaseTargets = {
-    1: { label:"知识点覆盖率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc:"已学习/总项目数" },
-    2: { label:"过去问完成率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc:"至少做过一次的题目" },
-    3: { label:"掌握率", calc: () => totalItems > 0 ? Math.round(((totalGreen + totalYellow) / totalItems) * 100) : 0, desc:"🟢+🟡 / 总数" },
-    4: { label:"完全掌握率", calc: () => totalItems > 0 ? Math.round((totalGreen / totalItems) * 100) : 0, desc:"🟢 / 总数" },
-  };
-
-  const target = phaseTargets[phaseNum] || phaseTargets[1];
-  const realPct = target.calc();
+function MasteryProgress({ data }) {
+  const summary = data?.summary || {};
+  const bySubject = summary.bySubject || {};
+  const total = summary.totalItems || 1;
 
   return (
-    <div className="card">
-      <div className="card-title">🎯 Phase Progress</div>
+    <div className="card fade-in fade-in-d3">
+      <div className="card-title"><span>📊</span> Mastery Progress</div>
 
-      {/* Current Phase Highlight */}
-      <div style={{padding:"14px 16px",background:`${phase?.color}08`,borderRadius:12,border:`1.5px solid ${phase?.color}25`,marginBottom:14}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <span style={{fontSize:14,fontWeight:700,color:phase?.color}}>▸ {phase?.name}</span>
-          <span className="mono" style={{fontSize:20,fontWeight:700,color:phase?.color}}>{realPct}%</span>
+      {/* Overall bar */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>
+          <span>全体 ({summary.totalItems || 0} items)</span>
+          <span className="mono">{summary.totalReviewed || 0} studied</span>
         </div>
-        <div style={{fontSize:11,color:"#888",marginBottom:8}}>{phase?.desc}</div>
-        <div style={{height:6,background:"#eee",borderRadius:3,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${Math.min(realPct,100)}%`,background:phase?.color,borderRadius:3,transition:"width .8s ease"}} />
+        <div className="mastery-bar-wrap">
+          <div className="mastery-bar-seg" style={{ width: `${(summary.totalGreen / total * 100)}%`, background: "var(--green)" }} />
+          <div className="mastery-bar-seg" style={{ width: `${(summary.totalYellow / total * 100)}%`, background: "var(--yellow)" }} />
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
-          <span style={{fontSize:10,color:"#aaa"}}>{target.label}: {target.desc}</span>
-          <span style={{fontSize:10,color:"#aaa"}}>{realPct}%</span>
+        <div className="mastery-legend">
+          <span><span className="mastery-dot" style={{ background: "var(--green)" }} />{summary.totalGreen || 0} 🟢</span>
+          <span><span className="mastery-dot" style={{ background: "var(--yellow)" }} />{summary.totalYellow || 0} 🟡</span>
+          <span><span className="mastery-dot" style={{ background: "rgba(255,255,255,0.1)" }} />{total - (summary.totalGreen || 0) - (summary.totalYellow || 0)} 未</span>
         </div>
       </div>
 
-      {/* All Phases Timeline */}
-      {PHASES.map((p, i) => {
-        const cur = i + 1 === phaseNum;
-        const past = t > new Date(p.end);
-        const future = t < new Date(p.start);
-        if (cur) return null; // already shown above
+      {/* Per subject */}
+      {SUBJECTS.map(subj => {
+        const s = bySubject[subj];
+        if (!s) return null;
+        const t = s.total || 1;
         return (
-          <div key={i} style={{marginBottom:8,padding:"6px 12px",opacity:future?.3:1}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-              <span style={{fontSize:12,color:"#888"}}>{p.name}</span>
-              <span className="mono" style={{fontSize:10,color:"#bbb"}}>{past?"✅ 完了":`${p.start.slice(5)}~`}</span>
+          <div key={subj} style={{ marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 3 }}>
+              <span>{SUBJECT_ICONS[subj]} {subj} ({s.total})</span>
+              <span className="mono">{s.green}🟢 {s.yellow}🟡 {s.red}🔴</span>
             </div>
-            <div style={{height:2,background:"#eee",borderRadius:2}}>
-              <div style={{height:"100%",width:past?"100%":"0%",background:past?"#ccc":p.color,borderRadius:2}} />
+            <div className="mastery-bar-wrap" style={{ height: 5 }}>
+              <div className="mastery-bar-seg" style={{ width: `${s.green / t * 100}%`, background: "var(--green)" }} />
+              <div className="mastery-bar-seg" style={{ width: `${s.yellow / t * 100}%`, background: "var(--yellow)" }} />
+              <div className="mastery-bar-seg" style={{ width: `${s.red / t * 100}%`, background: "var(--red)", opacity: 0.5 }} />
             </div>
           </div>
         );
       })}
-
-      {/* Stats Row */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:12}}>
-        <div className="stat-box"><div className="stat-label">学习天数</div><div className="stat-value">{studyDays}</div><div className="stat-sub">天</div></div>
-        <div className="stat-box"><div className="stat-label">总时间</div><div className="stat-value">{Math.round(totalMinutes/60)}</div><div className="stat-sub">小时</div></div>
-        <div className="stat-box"><div className="stat-label">已掌握</div><div className="stat-value">{totalGreen}</div><div className="stat-sub">/{totalItems} 项</div></div>
-      </div>
     </div>
   );
 }
 
-// ─── RECENT ACTIVITY ───
-function RecentAct({ logData }) {
-  const recent = (logData||[]).slice(0, 12);
-  return (
-    <div className="card">
-      <div className="card-title">📝 最近复习记录</div>
-      {recent.length === 0 ? (
-        <div style={{textAlign:"center",padding:20,color:"#bbb",fontSize:13}}>暂无记录</div>
-      ) : (
-        <div className="scroll-thin" style={{display:"flex",flexDirection:"column",gap:5,maxHeight:260,overflowY:"auto"}}>
-          {recent.map((r, i) => {
-            const sub = SUBJECTS.find(s => s.id === r.subject);
-            return (
-              <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:7,background:"#fafaf7"}}>
-                <div style={{width:5,height:5,borderRadius:"50%",background:sub?.color||"#ccc",flexShrink:0}} />
-                <div style={{flex:1,fontSize:12,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                  {sub?.icon||"📖"} {r.title || r.subject}
-                </div>
-                <span className="mono" style={{fontSize:11,color:"#aaa",flexShrink:0}}>{r.minutes||"?"}m</span>
-                <span style={{fontSize:10,color:"#ccc",flexShrink:0}}>{(r.date||"").slice(5)}</span>
-              </div>
-            );
-          })}
+function DueToday({ items }) {
+  const [showAll, setShowAll] = useState(false);
+  if (!items || items.length === 0) {
+    return (
+      <div className="card fade-in fade-in-d3">
+        <div className="card-title"><span>📋</span> 今日の復習 (0)</div>
+        <div style={{ textAlign: "center", padding: 20, color: "var(--text-muted)", fontSize: 13 }}>
+          🎉 今日はタスクなし！自由に学習しよう
         </div>
+      </div>
+    );
+  }
+  const display = showAll ? items : items.slice(0, 8);
+  return (
+    <div className="card fade-in fade-in-d3">
+      <div className="card-title"><span>📋</span> 今日の復習 ({items.length})</div>
+      {display.map((item, i) => (
+        <div className="due-item" key={i}>
+          <span className="due-mastery">{item.mastery || "⬜"}</span>
+          <span className="due-name">{item.name}</span>
+          <span className="due-badge" style={{
+            background: item.subject === "CS" ? "rgba(99,102,241,0.15)" :
+                         item.subject === "AI" ? "rgba(59,130,246,0.15)" :
+                         item.subject === "HCI" ? "rgba(34,197,94,0.15)" :
+                         item.subject === "SE" ? "rgba(249,115,22,0.15)" :
+                         "rgba(234,179,8,0.15)",
+            color: SUBJECT_COLORS[item.subject] || "var(--text-dim)",
+          }}>{item.subject}</span>
+        </div>
+      ))}
+      {items.length > 8 && (
+        <button onClick={() => setShowAll(!showAll)}
+          style={{ width: "100%", padding: 8, background: "none", border: "1px solid var(--card-border)", borderRadius: 8, color: "var(--text-dim)", cursor: "pointer", fontSize: 12, marginTop: 8, fontFamily: "inherit" }}>
+          {showAll ? "折りたたむ" : `残り ${items.length - 8} 件を表示`}
+        </button>
       )}
     </div>
   );
 }
 
-// ─── WORKFLOW TIP ───
-function Tip() {
-  const [open, setOpen] = useState(false);
+function PhaseBar({ data }) {
+  const today = new Date(todayStr());
+  const phase = curPhase();
+  const summary = data?.summary || {};
+  const totalItems = summary.totalItems || 0;
+  const totalGreen = summary.totalGreen || 0;
+  const totalYellow = summary.totalYellow || 0;
+  // ✅ Fix: use totalReviewed from backend (not green+yellow+red)
+  const reviewed = summary.totalReviewed || 0;
+
+  const phaseTargets = {
+    1: { label: "知識点カバー率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "学習済/総数" },
+    2: { label: "過去問完了率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "1回以上" },
+    3: { label: "習得率", calc: () => totalItems > 0 ? Math.round(((totalGreen + totalYellow) / totalItems) * 100) : 0, desc: "🟢+🟡" },
+    4: { label: "完全習得率", calc: () => totalItems > 0 ? Math.round((totalGreen / totalItems) * 100) : 0, desc: "🟢のみ" },
+  };
+  const target = phaseTargets[phase.num] || phaseTargets[1];
+  const pct = target.calc();
+
   return (
-    <div className="card">
-      <div className="card-title" style={{cursor:"pointer",display:"flex",justifyContent:"space-between"}} onClick={() => setOpen(!open)}>
-        <span>💡 使用说明</span>
-        <span>{open ? "▾" : "▸"}</span>
+    <div className="card fade-in fade-in-d4">
+      <div className="card-title"><span>🎯</span> Phase Progress</div>
+      <div className="phase-highlight" style={{ background: `${phase.color}08`, borderColor: `${phase.color}30` }}>
+        <div className="phase-row">
+          <span style={{ fontSize: 14, fontWeight: 700, color: phase.color }}>▸ {phase.name}</span>
+          <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: phase.color }}>{pct}%</span>
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>{phase.desc}</div>
+        <div className="phase-progress-bar">
+          <div className="phase-progress-fill" style={{ width: `${Math.min(pct, 100)}%`, background: phase.color }} />
+        </div>
+        <div className="phase-row" style={{ marginTop: 4 }}>
+          <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{target.label}: {target.desc}</span>
+        </div>
       </div>
-      {open && (
-        <div style={{fontSize:12,color:"#666",lineHeight:2}}>
-          <div>1️⃣ <b>点 ▶ 开始</b> → 选科目 → 开始计时</div>
-          <div>2️⃣ <b>点 ⏹ 结束</b> → 自动记录到 Notion 復習ログ</div>
-          <div>3️⃣ <b>去 Notion</b> → 补充 Mastery 和 Study Item 关联</div>
-          <div>4️⃣ <b>Auto Redo</b> 自动计算下次复习日</div>
-          <div style={{marginTop:8,padding:"8px 12px",background:"#FFF8E1",borderRadius:8,fontSize:11,color:"#8D6E12"}}>
-            ⚡ 手动在Notion记录也OK! 填 Start/End Time → Duration 自动算
+
+      {PHASES.map((p, i) => {
+        const isCurrent = i + 1 === phase.num;
+        const past = today > new Date(p.end);
+        const future = today < new Date(p.start);
+        if (isCurrent) return null;
+        return (
+          <div key={i} className="phase-timeline" style={{ opacity: future ? 0.3 : 1 }}>
+            <div className="phase-row" style={{ marginBottom: 3 }}>
+              <span style={{ fontSize: 12, color: "var(--text-dim)" }}>{p.name}</span>
+              <span className="mono" style={{ fontSize: 10, color: "var(--text-muted)" }}>{past ? "✅ 完了" : `${p.start.slice(5)}~`}</span>
+            </div>
+            <div style={{ height: 2, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
+              <div style={{ height: "100%", width: past ? "100%" : "0%", background: past ? "#555" : p.color, borderRadius: 2 }} />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }
 
-// ═══════════════ MAIN APP ═══════════════
+function WeeklyPlan() {
+  const dayOfWeek = new Date().getDay(); // 0=Sun
+  const dayMap = [6, 0, 1, 2, 3, 4, 5]; // Map JS day to our array index (Mon=0)
+  const todayIdx = dayMap[dayOfWeek];
+
+  return (
+    <div className="card fade-in fade-in-d4">
+      <div className="card-title"><span>📅</span> 週間計画</div>
+      <div className="week-grid">
+        {WEEK_PLAN.map((w, i) => (
+          <div key={i} className={`week-cell ${i === todayIdx ? "today" : ""}`}>
+            <div className="week-day">{w.day}</div>
+            <div className="week-icon">{w.icon}</div>
+            <div className="week-subject">{w.subject}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Timer({ onSave }) {
+  const [seconds, setSeconds] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [subject, setSubject] = useState("CS");
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [running]);
+
+  const handleSave = async () => {
+    if (seconds < 60) return;
+    setRunning(false);
+    const minutes = Math.round(seconds / 60);
+    const today = todayStr();
+    try {
+      await fetch(`${API_BASE}?action=create-log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: `${subject} 学習`, date: today, minutes, method: "タイマー" }),
+      });
+      await fetch(`${API_BASE}?action=create-checkin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${today} 打卡`,
+          date: today,
+          minutes,
+          phase: curPhase().name,
+          dayType: [0, 6].includes(new Date().getDay()) ? "休日" : "工作日",
+          [subject.toLowerCase()]: true,
+        }),
+      });
+      setSeconds(0);
+      if (onSave) onSave();
+    } catch (e) {
+      console.error("Save failed:", e);
+    }
+  };
+
+  return (
+    <div className="card fade-in fade-in-d5">
+      <div className="card-title"><span>⏱</span> 学習タイマー</div>
+      <div className="timer-section">
+        <div className="timer-subject-pills">
+          {SUBJECTS.map(s => (
+            <button key={s} className={`pill ${subject === s ? "active" : ""}`} onClick={() => setSubject(s)}>
+              {SUBJECT_ICONS[s]} {s}
+            </button>
+          ))}
+        </div>
+        <div className="timer-display">{formatTime(seconds)}</div>
+        <div className="timer-controls">
+          {!running ? (
+            <button className="btn btn-primary" onClick={() => setRunning(true)}>
+              {seconds > 0 ? "▶ 再開" : "▶ スタート"}
+            </button>
+          ) : (
+            <button className="btn btn-secondary" onClick={() => setRunning(false)}>⏸ 一時停止</button>
+          )}
+          {seconds > 0 && !running && (
+            <>
+              <button className="btn btn-primary" onClick={handleSave}>💾 保存</button>
+              <button className="btn btn-danger" onClick={() => setSeconds(0)}>✕ リセット</button>
+            </>
+          )}
+        </div>
+        {seconds > 0 && (
+          <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+            {Math.round(seconds / 60)} 分経過 · {subject}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RecentLogs({ logs }) {
+  if (!logs || logs.length === 0) return null;
+  return (
+    <div className="card fade-in fade-in-d5">
+      <div className="card-title"><span>📝</span> 最近の復習</div>
+      {logs.slice(0, 10).map((log, i) => (
+        <div className="log-item" key={i}>
+          <span style={{ marginRight: 8 }}>{log.mastery || "⬜"}</span>
+          <span className="log-title">{log.title}</span>
+          <span className="log-meta">{log.date?.slice(5)} · {log.minutes}分 · {log.subject}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ===== Main App =====
 function App() {
-  const [studyData, setStudyData] = useState(null);
-  const [dueItems, setDueItems] = useState(null);
-  const [logData, setLogData] = useState([]);
-  const [checkins, setCheckins] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [lastSync, setLastSync] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tab, setTab] = useState("dashboard");
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const data = await api("all");
-      if (!data) {
-        setError("无法连接到 API，检查 Vercel 部署");
-      } else if (data.error) {
-        setError(`API 错误: ${data.error}`);
-      } else {
-        if (data.summary) setStudyData(data.summary);
-        if (data.dueItems) setDueItems(data.dueItems);
-        if (data.logs) setLogData(data.logs);
-        if (data.checkins) setCheckins(data.checkins);
-      }
-    } catch(e) {
-      setError(`连接失败: ${e.message}`);
+      const res = await fetch(`${API_BASE}?action=all`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json);
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-    setLastSync(new Date().toLocaleTimeString("ja-JP"));
-    setLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(() => { fetchData(); }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  if (loading) {
+    return (
+      <div className="app">
+        <div className="loading">
+          <div className="spinner" />
+          <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Loading dashboard...</div>
+        </div>
+      </div>
+    );
+  }
 
-  const handleLog = (entry) => {
-    setLogData(prev => [{ title:`${entry.subject} - ${entry.note}`, date:entry.date, minutes:entry.minutes, subject:entry.subject }, ...prev]);
-  };
+  if (error) {
+    return (
+      <div className="app">
+        <div className="loading">
+          <div style={{ fontSize: 32 }}>⚠️</div>
+          <div style={{ color: "var(--red)", fontSize: 13 }}>エラー: {error}</div>
+          <button className="btn btn-primary" onClick={() => { setLoading(true); fetchData(); }}>再試行</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="wrap">
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div className="mono" style={{fontSize:11,color:"#aaa"}}>{lastSync ? `同步: ${lastSync} · 每5分钟自动刷新` : "加载中..."}</div>
-        <button onClick={fetchData} disabled={loading} style={{
-          background:loading?"#eee":"#1a1a2e",color:loading?"#999":"#fff",
-          border:"none",borderRadius:8,padding:"7px 16px",fontSize:12,cursor:loading?"not-allowed":"pointer",fontWeight:500,
-        }}>
-          {loading ? "⏳ 同步中..." : "🔄 刷新数据"}
-        </button>
+    <div className="app">
+      <Header data={data} />
+
+      <div className="tab-nav">
+        <button className={`tab-btn ${tab === "dashboard" ? "active" : ""}`} onClick={() => setTab("dashboard")}>📊 Dashboard</button>
+        <button className={`tab-btn ${tab === "study" ? "active" : ""}`} onClick={() => setTab("study")}>📋 復習</button>
+        <button className={`tab-btn ${tab === "timer" ? "active" : ""}`} onClick={() => setTab("timer")}>⏱ タイマー</button>
       </div>
 
-      <Countdown phase={curPhase()} />
-      {error && (
-        <div style={{marginTop:14,padding:"12px 18px",background:"#FFF3F3",border:"1px solid #FFCDD2",borderRadius:12,fontSize:12,color:"#C62828"}}>
-          ⚠️ {error}
-          <div style={{marginTop:6,fontSize:11,color:"#999"}}>
-            诊断步骤: 在浏览器打开 <a href="/api/notion?action=ping" target="_blank" style={{color:"#1976D2"}}>/api/notion?action=ping</a> → 看是否返回 JSON
-          </div>
-        </div>
-      )}
-      <Motiv logData={logData} checkins={checkins} />
-
-      <div className="grid">
-        <div className="col">
-          <Timer onLog={handleLog} />
-          <TodayPlan />
-          <TodayDue items={dueItems} loading={loading} />
-          <Tip />
-        </div>
-        <div className="col">
-          <Progress data={studyData} loading={loading} />
-          <Calendar logData={logData} checkins={checkins} />
+      {tab === "dashboard" && (
+        <>
+          <QuickStats data={data} />
+          <Heatmap checkins={data?.checkins} />
+          <MasteryProgress data={data} />
+          <PhaseBar data={data} />
           <WeeklyPlan />
-          <PhaseBar logData={logData} checkins={checkins} studyData={studyData} />
-          <RecentAct logData={logData} />
-        </div>
-      </div>
+          <RecentLogs logs={data?.logs} />
+        </>
+      )}
 
-      <div style={{textAlign:"center",padding:"20px 0 10px",fontSize:10,color:"#ccc"}}>
-        京大社情 Study Dashboard · Built with ♥ for 2026.8.1
-      </div>
+      {tab === "study" && (
+        <>
+          <QuickStats data={data} />
+          <DueToday items={data?.dueItems} />
+          <MasteryProgress data={data} />
+        </>
+      )}
+
+      {tab === "timer" && (
+        <>
+          <Timer onSave={fetchData} />
+          <RecentLogs logs={data?.logs} />
+        </>
+      )}
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.render(<App />, document.getElementById("root"));
 </script>
 </body>
 </html>
