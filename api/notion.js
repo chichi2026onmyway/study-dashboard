@@ -361,5 +361,5 @@ module.exports = async function handler(req, res) {
         return res.json(d);
       default: return res.status(400).json({error:"Unknown action"});
     }
-  }catch(e){return res.status(500).json({error:e.message});
+  }catch(e){return res.status(500).json({error:e.message});}
 };
