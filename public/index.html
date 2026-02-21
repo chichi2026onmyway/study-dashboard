@@ -5,932 +5,1432 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>京大社情 Study Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ===== CSS Variables - Warm Theme ===== */
 :root {
-  --bg: #f8f6f2;
-  --card: #ffffff;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
-  --card-hover: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
-  --border: #eee8e0;
+  --bg: #faf7f2;
+  --bg-card: #ffffff;
+  --bg-card-alt: #fefcf8;
+  --bg-warm: #f5f0e8;
+  --bg-hover: #f0ebe1;
+  --border: #e8e0d4;
+  --border-light: #f0e8dc;
   --text: #2d2a26;
-  --text-secondary: #8a8580;
-  --text-muted: #b5b0aa;
-  --accent: #e8836b;
-  --accent-light: #fef0ec;
-  --green: #5cb85c;
-  --green-light: #eef8ee;
-  --yellow: #f0ad4e;
-  --yellow-light: #fef8ec;
-  --red: #d9534f;
-  --red-light: #fceeed;
-  --blue: #5b9bd5;
-  --blue-light: #eef4fb;
-  --purple: #9b6db0;
-  --cs-color: #e8b849;
-  --ai-color: #5b9bd5;
-  --hci-color: #5cb85c;
-  --se-color: #e8836b;
-  --ir-color: #e89b49;
+  --text-secondary: #7a7268;
+  --text-muted: #a39b8f;
+  --accent: #e07a3a;
+  --accent-light: #fdf0e6;
+  --accent-hover: #c96a2f;
+  --green: #4caf7d;
+  --green-light: #e8f5e9;
+  --yellow: #f5b731;
+  --yellow-light: #fff8e1;
+  --red: #e55b4d;
+  --red-light: #ffeee9;
+  --blue: #5b8def;
+  --blue-light: #e8f0fe;
+  --purple: #9575cd;
+  --shadow-sm: 0 1px 3px rgba(45,42,38,0.06);
+  --shadow-md: 0 4px 12px rgba(45,42,38,0.08);
+  --shadow-lg: 0 8px 24px rgba(45,42,38,0.1);
   --radius: 14px;
-  --radius-sm: 10px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Noto Sans JP', -apple-system, sans-serif;
+  font-family: 'DM Sans', 'Noto Sans JP', sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-.mono { font-family: 'JetBrains Mono', monospace; }
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* Layout */
-.dashboard { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+/* ===== Layout ===== */
+.dashboard {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
 
+/* ===== Header ===== */
 .header {
-  text-align: center;
-  padding: 28px 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding: 20px 28px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
-.header-title {
+.header-left h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.header-left p {
   font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 3px;
-  text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-top: 2px;
 }
-.header-main {
+.countdown-box {
+  text-align: center;
+  padding: 8px 24px;
+  background: linear-gradient(135deg, var(--accent-light), #fff5ec);
+  border-radius: var(--radius-sm);
+  border: 1px solid #f0dcc8;
+}
+.countdown-days {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.countdown-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ===== Stats Grid ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.stat-card:hover { box-shadow: var(--shadow-md); }
+.stat-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
   font-size: 28px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 2px;
+  line-height: 1;
 }
-.header-sub {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-/* Cards */
-.card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 14px;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border);
-  transition: box-shadow .2s;
-}
-.card:hover { box-shadow: var(--card-hover); }
-.card-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+.stat-label {
+  font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 14px;
+  margin-top: 4px;
+  font-weight: 500;
 }
 
-/* Grid */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-@media (max-width: 640px) {
-  .grid-2 { grid-template-columns: 1fr; }
-  .grid-3 { grid-template-columns: 1fr 1fr; }
-}
-
-/* Stats boxes */
-.stat-box {
-  text-align: center;
-  padding: 14px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-}
-.stat-label { font-size: 10px; color: var(--text-muted); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-.stat-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; }
-.stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-
-/* Progress bar */
-.progress-track { height: 6px; background: #f0ece6; border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 3px; transition: width .8s ease; }
-
-/* Subject badge */
-.subj-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.subj-CS { background: #fef5e0; color: #a07820; }
-.subj-AI { background: #e8f0fb; color: #3a6da8; }
-.subj-HCI { background: #e8f5e8; color: #3a8a3a; }
-.subj-SE { background: #fce8e4; color: #b05840; }
-.subj-IR { background: #fef0e0; color: #a07830; }
-
-/* Priority badge */
-.pri-badge {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-}
-.pri-S { background: var(--red-light); color: var(--red); }
-.pri-A { background: #fef0e0; color: #c07020; }
-.pri-B { background: var(--yellow-light); color: #a08020; }
-.pri-C { background: var(--green-light); color: var(--green); }
-
-/* Mastery dot */
-.mastery-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.mastery-green { background: var(--green); }
-.mastery-yellow { background: var(--yellow); }
-.mastery-red { background: var(--red); }
-
-/* Heatmap */
-.heatmap-grid {
+/* ===== Main Grid ===== */
+.main-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 13px);
-  gap: 3px;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* ===== Card Component ===== */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 16px; }
+.card-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--bg-warm);
+  color: var(--text-secondary);
+  border-radius: 20px;
+  font-weight: 500;
+}
+.card-body { padding: 16px 20px; }
+
+/* ===== Timer Section ===== */
+.timer-section {
+  grid-column: 1 / -1;
+}
+.timer-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 0;
+}
+.timer-panel {
+  padding: 24px;
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.timer-subjects {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
   justify-content: center;
 }
-.heatmap-cell {
-  width: 13px;
-  height: 13px;
-  border-radius: 3px;
-  background: #f0ece6;
-  transition: background .2s;
+.timer-subject-btn {
+  padding: 6px 16px;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-card);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
 }
-.heatmap-cell[data-level="1"] { background: #d4edda; }
-.heatmap-cell[data-level="2"] { background: #a3d9a5; }
-.heatmap-cell[data-level="3"] { background: #6bc46d; }
-.heatmap-cell[data-level="4"] { background: #3aaa3c; }
-.heatmap-cell.today { outline: 2px solid var(--text); outline-offset: -1px; }
+.timer-subject-btn:hover { border-color: var(--accent); color: var(--accent); }
+.timer-subject-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 2px;
+  margin: 8px 0 20px;
+  line-height: 1;
+}
+.timer-display.running { color: var(--accent); }
+.timer-controls {
+  display: flex;
+  gap: 10px;
+}
+.timer-btn {
+  padding: 10px 32px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.timer-btn.start {
+  background: var(--green);
+  color: #fff;
+}
+.timer-btn.start:hover { background: #43a070; }
+.timer-btn.stop {
+  background: var(--red);
+  color: #fff;
+}
+.timer-btn.stop:hover { background: #d04a3d; }
+.timer-btn.reset {
+  background: var(--bg-warm);
+  color: var(--text-secondary);
+}
+.timer-btn.reset:hover { background: var(--bg-hover); }
 
-/* Due list */
-.due-item {
+/* Timer - Active Item Display */
+.timer-active-item {
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: var(--accent-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid #f0dcc8;
+  text-align: center;
+  width: 100%;
+  max-width: 320px;
+}
+.timer-active-item .label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.timer-active-item .item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.timer-active-item.empty {
+  background: var(--bg-warm);
+  border-color: var(--border);
+}
+.timer-active-item.empty .label { color: var(--text-muted); }
+.timer-active-item.empty .item-name { color: var(--text-secondary); font-weight: 400; }
+
+/* Timer - Review Queue Panel */
+.review-queue-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+}
+.review-queue-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.review-queue-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.review-queue-filters {
+  display: flex;
+  gap: 6px;
+}
+.review-filter-btn {
+  padding: 3px 10px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.review-filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.review-filter-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.review-queue-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+.review-queue-item {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
-  margin-bottom: 6px;
-  transition: background .15s;
   cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-}
-.due-item:hover { background: var(--bg); }
-.due-item-name { font-size: 13px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.due-item-meta { font-size: 11px; color: var(--text-secondary); }
-
-/* Weekly schedule */
-.week-row {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  border: 2px solid transparent;
   margin-bottom: 4px;
-  transition: background .15s;
 }
-.week-row.active { background: var(--accent-light); border: 1px solid #f0c8be; }
-.week-day { width: 36px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-.week-row.active .week-day { color: var(--accent); }
-.week-subject { flex: 1; font-size: 13px; font-weight: 500; }
-.week-time { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
-
-/* Phase */
-.phase-item {
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  margin-bottom: 6px;
+.review-queue-item:hover { background: var(--bg-warm); }
+.review-queue-item.selected {
+  background: var(--accent-light);
+  border-color: var(--accent);
 }
-.phase-active { border: 1.5px solid; }
-.phase-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-.phase-desc { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
+.review-queue-item.completed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.rq-subject {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.rq-subject.CS { background: #fef3e2; color: #c17a1e; }
+.rq-subject.AI { background: #e8f5e9; color: #388e3c; }
+.rq-subject.HCI { background: #fce4ec; color: #c62828; }
+.rq-subject.SE { background: #f3e5f5; color: #7b1fa2; }
+.rq-subject.IR { background: #e3f2fd; color: #1565c0; }
+.rq-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rq-priority {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.rq-priority.S { background: var(--red-light); color: var(--red); }
+.rq-priority.A { background: #fff3e0; color: #e65100; }
+.rq-priority.B { background: var(--yellow-light); color: #f57f17; }
+.rq-priority.C { background: var(--green-light); color: var(--green); }
+.rq-mastery {
+  font-size: 14px;
+  flex-shrink: 0;
+}
 
-/* Timer */
-.timer-display {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 48px;
+/* Review completion modal */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(45,42,38,0.4);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(10px);
+  transition: transform 0.2s;
+}
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+.modal-field {
+  margin-bottom: 14px;
+}
+.modal-field label {
+  display: block;
+  font-size: 12px;
   font-weight: 600;
-  text-align: center;
-  color: var(--text);
-  padding: 16px 0;
-  letter-spacing: 2px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.timer-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 24px;
-  border-radius: 10px;
+.modal-field select, .modal-field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--bg-card);
+  color: var(--text);
+}
+.modal-field textarea { resize: vertical; min-height: 60px; }
+.modal-mastery-btns {
+  display: flex;
+  gap: 8px;
+}
+.mastery-btn {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.mastery-btn:hover { border-color: var(--accent); }
+.mastery-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+.mastery-btn .emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+.mastery-btn .text { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.modal-actions button {
+  flex: 1;
+  padding: 10px;
   border: none;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all .15s;
   font-family: inherit;
+  transition: all 0.15s;
 }
-.timer-btn:active { transform: scale(0.97); }
-.btn-start { background: var(--green); color: white; }
-.btn-start:hover { background: #4caa4c; }
-.btn-stop { background: var(--red); color: white; }
-.btn-stop:hover { background: #c94540; }
-.btn-save { background: var(--blue); color: white; }
-.btn-save:hover { background: #4a8ac5; }
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid var(--border);
-  color: var(--text-secondary);
-}
-.btn-outline:hover { background: var(--bg); }
+.modal-actions .cancel { background: var(--bg-warm); color: var(--text-secondary); }
+.modal-actions .submit { background: var(--accent); color: #fff; }
+.modal-actions .submit:hover { background: var(--accent-hover); }
 
-.timer-subject-btns {
+/* ===== Heatmap ===== */
+.heatmap-section { grid-column: 1 / -1; }
+.heatmap-wrapper {
+  padding: 16px 20px;
+  overflow-x: auto;
+}
+.heatmap-months {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  padding-left: 28px;
 }
-.subj-btn {
-  padding: 6px 16px;
-  border-radius: 8px;
-  border: 1.5px solid var(--border);
-  background: white;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-  font-family: inherit;
+.heatmap-grid {
+  display: flex;
+  gap: 3px;
 }
-.subj-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
-.subj-btn:hover { border-color: var(--text-muted); }
-
-/* Select dropdown */
-select {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1.5px solid var(--border);
-  background: white;
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--text);
-  cursor: pointer;
-}
-
-/* Loading */
-.loading {
-  text-align: center;
-  padding: 80px 0;
+.heatmap-days-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-right: 4px;
+  font-size: 9px;
   color: var(--text-muted);
 }
-.loading-spinner {
-  width: 32px; height: 32px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
-  margin: 0 auto 12px;
+.heatmap-days-labels span {
+  height: 13px;
+  display: flex;
+  align-items: center;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Scroll */
-.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-/* Tooltip */
-.tooltip {
+.heatmap-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.heatmap-day {
+  width: 13px; height: 13px;
+  border-radius: 3px;
+  background: var(--bg-warm);
+  transition: all 0.15s;
   position: relative;
 }
-.tooltip::after {
+.heatmap-day:hover { transform: scale(1.3); z-index: 1; }
+.heatmap-day[data-tip]:hover::after {
   content: attr(data-tip);
   position: absolute;
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 8px;
-  border-radius: 6px;
   background: var(--text);
-  color: white;
-  font-size: 11px;
+  color: #fff;
+  font-size: 10px;
+  border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity .15s;
-  z-index: 10;
+  z-index: 2;
 }
-.tooltip:hover::after { opacity: 1; }
-
-/* Mastery bar segments */
-.mastery-bar {
+.heatmap-day.l1 { background: #e0d5c3; }
+.heatmap-day.l2 { background: #f5c882; }
+.heatmap-day.l3 { background: #e8a44a; }
+.heatmap-day.l4 { background: var(--accent); }
+.heatmap-day.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+.heatmap-legend {
   display: flex;
-  height: 8px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #f0ece6;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
 }
-.mastery-bar > div { transition: width .6s ease; }
+.heatmap-legend-box {
+  width: 13px; height: 13px;
+  border-radius: 3px;
+}
+
+/* ===== Mastery Progress ===== */
+.mastery-subject {
+  margin-bottom: 14px;
+}
+.mastery-subject:last-child { margin-bottom: 0; }
+.mastery-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.mastery-subject-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.mastery-counts {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.mastery-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--bg-warm);
+  overflow: hidden;
+  display: flex;
+}
+.mastery-bar .seg-green { background: var(--green); }
+.mastery-bar .seg-yellow { background: var(--yellow); }
+.mastery-bar .seg-red { background: var(--red); }
+.mastery-bar .seg-empty { background: var(--bg-warm); }
+
+/* ===== Due Today List ===== */
+.due-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+.due-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.due-item:last-child { border-bottom: none; }
+.due-subject {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.due-subject.CS { background: #fef3e2; color: #c17a1e; }
+.due-subject.AI { background: #e8f5e9; color: #388e3c; }
+.due-subject.HCI { background: #fce4ec; color: #c62828; }
+.due-subject.SE { background: #f3e5f5; color: #7b1fa2; }
+.due-subject.IR { background: #e3f2fd; color: #1565c0; }
+.due-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.due-priority {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.due-mastery { font-size: 14px; flex-shrink: 0; }
+
+/* ===== Phase Progress ===== */
+.phase-list { }
+.phase-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.phase-item:last-child { border-bottom: none; }
+.phase-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.phase-num.p0 { background: #9e9e9e; }
+.phase-num.p1 { background: var(--blue); }
+.phase-num.p2 { background: var(--accent); }
+.phase-num.p3 { background: var(--red); }
+.phase-num.p4 { background: var(--purple); }
+.phase-info { flex: 1; }
+.phase-name { font-size: 13px; font-weight: 600; }
+.phase-meta { font-size: 11px; color: var(--text-muted); }
+.phase-bar-bg {
+  height: 6px;
+  background: var(--bg-warm);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.phase-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+
+/* ===== Weekly Plan ===== */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.week-day {
+  text-align: center;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-light);
+  transition: all 0.15s;
+}
+.week-day.today {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+.week-day-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.week-day-date {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 4px 0;
+  color: var(--text);
+}
+.week-day.today .week-day-date { color: var(--accent); }
+.week-day-tasks {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ===== Recent Logs ===== */
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.log-item:last-child { border-bottom: none; }
+.log-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 75px;
+}
+.log-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ===== Loading ===== */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+}
+.loading-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  background: var(--text);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 2000;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .main-grid { grid-template-columns: 1fr; }
+  .timer-layout { grid-template-columns: 1fr; }
+  .timer-panel { border-right: none; border-bottom: 1px solid var(--border-light); }
+  .review-queue-panel { max-height: 300px; }
+  .week-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 600px) {
+  .dashboard { padding: 12px 10px 40px; }
+  .header { flex-direction: column; gap: 12px; text-align: center; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .timer-display { font-size: 48px; }
+}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
 
-// ── Config ────────────────────────────────────────────
-const API = "/api/notion";
-const EXAM_DATE = "2026-08-01";
-const SUBJECTS = ["CS", "AI", "HCI", "SE", "IR"];
-const SUBJ_EMOJI = { CS: "💻", AI: "🤖", HCI: "🧑‍💻", SE: "⚙️", IR: "🔍" };
-const SUBJ_COLOR = { CS: "#e8b849", AI: "#5b9bd5", HCI: "#5cb85c", SE: "#e8836b", IR: "#e89b49" };
+<div class="dashboard" id="app">
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading dashboard data from Notion...</div>
+  </div>
+</div>
 
-const PHASES = [
-  { name: "Phase 1: 基礎扫盲", desc: "通读教材 + S级知识点", start: "2026-03-01", end: "2026-04-30", color: "#5b9bd5" },
-  { name: "Phase 2: 过去問", desc: "全部过去问 + Mastery标记", start: "2026-05-01", end: "2026-06-15", color: "#e89b49" },
-  { name: "Phase 3: 弱点攻克", desc: "消灭🔴, 巩固🟡", start: "2026-06-16", end: "2026-07-15", color: "#e8836b" },
-  { name: "Phase 4: 冲刺", desc: "模拟考试 + 速记卡", start: "2026-07-16", end: "2026-08-01", color: "#9b6db0" },
+<!-- Review Completion Modal -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <h3>📝 復習完了！</h3>
+    <div id="modalItemName" style="font-size:14px;color:var(--accent);font-weight:600;margin-bottom:16px;"></div>
+    <div class="modal-field">
+      <label>掌握度 Mastery</label>
+      <div class="modal-mastery-btns" id="modalMastery">
+        <button class="mastery-btn" data-value="🟢 掌握" onclick="selectMastery(this)">
+          <span class="emoji">🟢</span><span class="text">掌握</span>
+        </button>
+        <button class="mastery-btn" data-value="🟡 半熟" onclick="selectMastery(this)">
+          <span class="emoji">🟡</span><span class="text">半熟</span>
+        </button>
+        <button class="mastery-btn" data-value="🔴 不会" onclick="selectMastery(this)">
+          <span class="emoji">🔴</span><span class="text">不会</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>方法 Method</label>
+      <select id="modalMethod">
+        <option value="✍️ 做题">✍️ 做题</option>
+        <option value="📖 通读">📖 通读</option>
+        <option value="🧠 回忆">🧠 回忆</option>
+        <option value="📝 笔记">📝 笔记</option>
+        <option value="🃏 Anki">🃏 Anki</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>备注 Notes</label>
+      <textarea id="modalNotes" placeholder="记录你的想法..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeReviewModal()">取消</button>
+      <button class="submit" onclick="submitReview()">✓ 记录到 Notion</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== State =====
+let DATA = null;
+let timerState = {
+  running: false,
+  seconds: 0,
+  interval: null,
+  subject: 'CS',
+  selectedItem: null,
+  startTime: null,
+  completedItems: new Set(),
+};
+let reviewFilter = 'all';
+let selectedMastery = null;
+
+const API_BASE = '/api/notion';
+const SUBJECTS = [
+  { key: 'CS', icon: '💻', color: '#c17a1e' },
+  { key: 'AI', icon: '🤖', color: '#388e3c' },
+  { key: 'HCI', icon: '👥', color: '#c62828' },
+  { key: 'SE', icon: '⚙️', color: '#7b1fa2' },
+  { key: 'IR', icon: '🔍', color: '#1565c0' },
 ];
+const WEEK_PLAN = {
+  1: ['CS 基础', 'AI 知识点'],
+  2: ['HCI 过去问', 'SE 知识点'],
+  3: ['CS 过去问', 'IR 知识点'],
+  4: ['AI 过去问', 'HCI 知识点'],
+  5: ['SE 过去问', 'CS 弱点'],
+  6: ['全科过去问', '弱点攻克'],
+  0: ['自由复习', '整理笔记'],
+};
 
-const WEEKLY = [
-  { day: "Mon", subj: "CS", task: "Ch1-4 基础概念", mins: 45 },
-  { day: "Tue", subj: "AI", task: "过去問 + 知识点", mins: 45 },
-  { day: "Wed", subj: "HCI", task: "実験設計/応用", mins: 45 },
-  { day: "Thu", subj: "SE", task: "章節重点", mins: 45 },
-  { day: "Fri", subj: "CS", task: "Ch5-8 算法/数据", mins: 45 },
-  { day: "Sat", subj: "IR", task: "过去問集中", mins: 120 },
-  { day: "Sun", subj: "CS", task: "Ch9-12 + 弱点補強", mins: 120 },
-];
-
-function today() {
-  const d = new Date();
-  return new Date(d.getTime() + 9 * 3600000).toISOString().split("T")[0];
-}
-
-function dayOfWeek() {
-  const d = new Date();
-  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
-}
-
-function curPhase() {
-  const t = today();
-  for (let i = 0; i < PHASES.length; i++) {
-    if (t >= PHASES[i].start && t <= PHASES[i].end) return { ...PHASES[i], idx: i };
+// ===== Init =====
+async function init() {
+  try {
+    const resp = await fetch(`${API_BASE}?action=getAll`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    DATA = await resp.json();
+    render();
+  } catch (e) {
+    document.getElementById('loadingScreen').innerHTML = `
+      <div style="text-align:center;color:var(--red);">
+        <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
+        <div style="font-size:14px;font-weight:600;">データ読み込み失敗</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${e.message}</div>
+        <button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;">再試行</button>
+      </div>`;
   }
-  if (t < PHASES[0].start) return { ...PHASES[0], idx: 0, pre: true };
-  return { ...PHASES[PHASES.length - 1], idx: PHASES.length - 1 };
 }
 
-// ── API ───────────────────────────────────────────────
-async function fetchAPI(action, body) {
-  const opts = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
-  const r = await fetch(`${API}?action=${action}`, opts);
-  return r.json();
-}
+// ===== Render =====
+function render() {
+  const app = document.getElementById('app');
+  const d = DATA;
 
-// ── Components ────────────────────────────────────────
-
-function CountdownCard({ daysLeft }) {
-  const d = daysLeft || Math.ceil((new Date(EXAM_DATE) - new Date(today())) / 86400000);
-  const pct = Math.max(0, Math.min(100, ((161 - d) / 161) * 100)); // ~161 days from Feb 21 to Aug 1
-  return (
-    <div className="card" style={{textAlign:"center", background:"linear-gradient(135deg, #fef8f4 0%, #fff 100%)"}}>
-      <div className="card-title">⏳ 考试倒计时</div>
-      <div className="mono" style={{fontSize:52, fontWeight:700, color:"var(--accent)", lineHeight:1.1}}>{d}</div>
-      <div style={{fontSize:13, color:"var(--text-secondary)", marginTop:4}}>天 · 目标 2026.8.1 京大社情</div>
-      <div style={{marginTop:12}}>
-        <div className="progress-track">
-          <div className="progress-fill" style={{width:`${pct}%`, background:"linear-gradient(90deg, var(--accent), #e8b849)"}} />
-        </div>
-        <div style={{fontSize:10, color:"var(--text-muted)", marginTop:4}}>备考进度 {pct.toFixed(0)}%</div>
-      </div>
+  app.innerHTML = `
+    ${renderHeader(d)}
+    ${renderStats(d)}
+    ${renderTimer(d)}
+    ${renderHeatmap(d)}
+    <div class="main-grid">
+      ${renderMastery(d)}
+      ${renderDueToday(d)}
+      ${renderPhaseProgress(d)}
+      ${renderWeekPlan()}
     </div>
-  );
+    ${renderRecentLogs(d)}
+  `;
+
+  // Re-apply timer state
+  if (timerState.running) {
+    const display = document.getElementById('timerDisplay');
+    if (display) display.classList.add('running');
+  }
+  updateTimerDisplay();
+  highlightSelectedItem();
 }
 
-function StatsRow({ calendarStats }) {
-  const s = calendarStats || {};
-  return (
-    <div className="grid-4" style={{marginBottom:14}}>
-      <div className="card" style={{padding:14, textAlign:"center"}}>
-        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>今日</div>
-        <div className="mono" style={{fontSize:24, fontWeight:700}}>{s.todayMinutes || 0}<span style={{fontSize:12, fontWeight:400}}>m</span></div>
+function renderHeader(d) {
+  return `
+    <div class="header">
+      <div class="header-left">
+        <h1>🎯 京大社情 Study Dashboard</h1>
+        <p>社会情報学コース 2026.8 入試対策</p>
       </div>
-      <div className="card" style={{padding:14, textAlign:"center"}}>
-        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>本月</div>
-        <div className="mono" style={{fontSize:24, fontWeight:700}}>{Math.round((s.monthMinutes || 0)/60)}<span style={{fontSize:12, fontWeight:400}}>h</span></div>
-        <div style={{fontSize:10, color:"var(--text-secondary)"}}>{s.monthDays || 0}天</div>
+      <div class="countdown-box">
+        <div class="countdown-days">${d.daysLeft}</div>
+        <div class="countdown-label">Days Until Exam</div>
       </div>
-      <div className="card" style={{padding:14, textAlign:"center"}}>
-        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>连续</div>
-        <div className="mono" style={{fontSize:24, fontWeight:700}}>{s.streak || 0}<span style={{fontSize:12, fontWeight:400}}>天</span></div>
-        <div style={{fontSize:10, color:"var(--text-secondary)"}}>💪</div>
-      </div>
-      <div className="card" style={{padding:14, textAlign:"center"}}>
-        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>总计</div>
-        <div className="mono" style={{fontSize:24, fontWeight:700}}>{s.totalDays || 0}</div>
-        <div style={{fontSize:10, color:"var(--text-secondary)"}}>学习天数</div>
-      </div>
-    </div>
-  );
+    </div>`;
 }
 
-function HeatmapCalendar({ checkins }) {
-  const todayStr = today();
-  const year = parseInt(todayStr.slice(0, 4));
-  const month = parseInt(todayStr.slice(5, 7));
+function renderStats(d) {
+  const studied = d.masteryStats.green + d.masteryStats.yellow + d.masteryStats.red;
+  return `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:${timerState.running ? 'var(--red-light)' : 'var(--accent-light)'}">🔥</div>
+        <div class="stat-value">${d.streak}</div>
+        <div class="stat-label">連続学習日数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--blue-light)">⏱</div>
+        <div class="stat-value">${d.totalHours}</div>
+        <div class="stat-label">累計学習時間 (h)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--green-light)">📚</div>
+        <div class="stat-value">${studied}<span style="font-size:14px;color:var(--text-muted)">/${d.masteryStats.total}</span></div>
+        <div class="stat-label">学習済み項目</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--yellow-light)">📋</div>
+        <div class="stat-value">${d.dueToday.length}</div>
+        <div class="stat-label">今日待復習</div>
+      </div>
+    </div>`;
+}
 
-  // Build map: date -> minutes
-  const map = {};
-  (checkins || []).forEach(c => {
-    if (c.date && c.minutes > 0 && c.date <= todayStr) {
-      map[c.date] = (map[c.date] || 0) + c.minutes;
-    }
+function renderTimer(d) {
+  const subjectBtns = SUBJECTS.map(s => `
+    <button class="timer-subject-btn ${timerState.subject === s.key ? 'active' : ''}"
+            onclick="setTimerSubject('${s.key}')">
+      ${s.icon} ${s.key}
+    </button>`).join('');
+
+  const activeItemHtml = timerState.selectedItem
+    ? `<div class="timer-active-item">
+        <div class="label">正在复习</div>
+        <div class="item-name">${timerState.selectedItem.name}</div>
+      </div>`
+    : `<div class="timer-active-item empty">
+        <div class="label">选择复习项目</div>
+        <div class="item-name">← 从右侧列表选择一题开始</div>
+      </div>`;
+
+  // Filter due items for review queue
+  const filteredItems = d.dueToday.filter(item => {
+    if (reviewFilter === 'all') return true;
+    return item.subject === reviewFilter;
   });
 
-  // Generate calendar for current month
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDow = new Date(year, month - 1, 1).getDay(); // 0=Sun
+  const queueItems = filteredItems.map(item => {
+    const isSelected = timerState.selectedItem?.id === item.id;
+    const isCompleted = timerState.completedItems.has(item.id);
+    const pLabel = item.priority ? item.priority.charAt(2) : '';
+    const pClass = pLabel === 'S' ? 'S' : pLabel === 'A' ? 'A' : pLabel === 'B' ? 'B' : 'C';
+    return `
+      <div class="review-queue-item ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}"
+           onclick="selectReviewItem('${item.id}')">
+        <span class="rq-subject ${item.subject}">${item.subject}</span>
+        <span class="rq-name" title="${item.name}">${item.name}</span>
+        ${pLabel ? `<span class="rq-priority ${pClass}">${pLabel}</span>` : ''}
+        <span class="rq-mastery">${item.mastery || '⚪'}</span>
+      </div>`;
+  }).join('');
 
-  function level(mins) {
-    if (!mins || mins <= 0) return 0;
-    if (mins <= 30) return 1;
-    if (mins <= 60) return 2;
-    if (mins <= 120) return 3;
-    return 4;
-  }
+  const filterBtns = ['all', ...SUBJECTS.map(s => s.key)].map(f => `
+    <button class="review-filter-btn ${reviewFilter === f ? 'active' : ''}"
+            onclick="setReviewFilter('${f}')">${f === 'all' ? '全部' : f}</button>`).join('');
 
-  const cells = [];
-  // Add empty cells for days before month start
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    const ds = `${year}-${String(month).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    cells.push({ day: d, date: ds, mins: map[ds] || 0 });
-  }
-
-  const dayLabels = ["日","月","火","水","木","金","土"];
-  const monthNames = ["","1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
-
-  return (
-    <div className="card">
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
-        <div className="card-title" style={{margin:0}}>📅 Study Calendar</div>
-        <div style={{fontSize:15, fontWeight:600, color:"var(--text)"}}>{year}年{month}月</div>
-      </div>
-      
-      {/* Day headers */}
-      <div style={{display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:2, marginBottom:6}}>
-        {dayLabels.map((dl, i) => (
-          <div key={i} style={{textAlign:"center", fontSize:11, color:"var(--text-muted)", fontWeight:500, padding:"2px 0"}}>{dl}</div>
-        ))}
-      </div>
-
-      {/* Calendar grid */}
-      <div style={{display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:3}}>
-        {cells.map((cell, i) => {
-          if (!cell) return <div key={i} />;
-          const isToday = cell.date === todayStr;
-          const isFuture = cell.date > todayStr;
-          const lv = isFuture ? -1 : level(cell.mins);
-          const colors = ["#f0ece6", "#d4edda", "#a3d9a5", "#6bc46d", "#3aaa3c"];
-          const bg = lv < 0 ? "#fafaf7" : colors[lv];
-          return (
-            <div key={i} className="tooltip" data-tip={cell.mins > 0 ? `${cell.date}: ${cell.mins}分` : cell.date}
-              style={{
-                aspectRatio:"1", borderRadius:6, background: bg,
-                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                outline: isToday ? "2px solid var(--text)" : "none",
-                outlineOffset: -1,
-                opacity: isFuture ? 0.35 : 1,
-              }}>
-              <div style={{fontSize:13, fontWeight: isToday ? 700 : (cell.mins > 0 ? 600 : 400), color: isToday ? "var(--text)" : (cell.mins > 0 ? "#2d5a2d" : "var(--text-secondary)")}}>{cell.day}</div>
-              {cell.mins > 0 && !isFuture && (
-                <div style={{fontSize:9, color:"#3a8a3a", fontWeight:500}}>{cell.mins}m</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Legend */}
-      <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:4, marginTop:12, fontSize:10, color:"var(--text-muted)"}}>
-        <span>Less</span>
-        {["#f0ece6","#d4edda","#a3d9a5","#6bc46d","#3aaa3c"].map((c,i) => (
-          <div key={i} style={{width:12, height:12, borderRadius:3, background:c}} />
-        ))}
-        <span>More</span>
-      </div>
-    </div>
-  );
-}
-
-function MasteryProgress({ studyData }) {
-  if (!studyData?.bySubject) return null;
-  const subjects = Object.entries(studyData.bySubject).filter(([k]) => SUBJECTS.includes(k));
-
-  return (
-    <div className="card">
-      <div className="card-title">📊 Mastery Progress</div>
-      {subjects.map(([subj, d]) => {
-        const gPct = d.total > 0 ? (d.green / d.total * 100) : 0;
-        const yPct = d.total > 0 ? (d.yellow / d.total * 100) : 0;
-        const rPct = d.total > 0 ? (d.red / d.total * 100) : 0;
-        return (
-          <div key={subj} style={{marginBottom:12}}>
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4}}>
-              <div style={{display:"flex", alignItems:"center", gap:6}}>
-                <span className={`subj-badge subj-${subj}`}>{SUBJ_EMOJI[subj]} {subj}</span>
-              </div>
-              <div style={{fontSize:11, color:"var(--text-secondary)"}}>
-                <span style={{color:"var(--green)", fontWeight:600}}>{d.green}</span>
-                <span style={{color:"var(--text-muted)"}}> / </span>
-                <span style={{color:"var(--yellow)"}}>{d.yellow}</span>
-                <span style={{color:"var(--text-muted)"}}> / </span>
-                <span style={{color:"var(--red)"}}>{d.red}</span>
-                <span style={{color:"var(--text-muted)"}}> · {d.total}題</span>
-              </div>
-            </div>
-            <div className="mastery-bar">
-              <div style={{width:`${gPct}%`, background:"var(--green)"}} />
-              <div style={{width:`${yPct}%`, background:"var(--yellow)"}} />
-              <div style={{width:`${rPct}%`, background:"var(--red)"}} />
-            </div>
-            <div style={{fontSize:10, color:"var(--text-muted)", marginTop:2}}>
-              已学习: {d.reviewed}/{d.total} · 掌握率: {gPct.toFixed(0)}%
-            </div>
+  return `
+    <div class="card timer-section">
+      <div class="timer-layout">
+        <div class="timer-panel">
+          <div class="card-title" style="margin-bottom:12px"><span class="icon">⏱</span> STUDY TIMER</div>
+          <div class="timer-subjects">${subjectBtns}</div>
+          <div class="timer-display ${timerState.running ? 'running' : ''}" id="timerDisplay">${formatTime(timerState.seconds)}</div>
+          <div class="timer-controls">
+            ${timerState.running
+              ? `<button class="timer-btn stop" onclick="stopTimer()">⏹ 停止</button>`
+              : `<button class="timer-btn start" onclick="startTimer()">▶ 開始</button>`}
+            <button class="timer-btn reset" onclick="resetTimer()">↻</button>
           </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function DueToday({ items }) {
-  if (!items || items.length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">📋 今日待复习</div>
-        <div style={{textAlign:"center", padding:"20px 0", color:"var(--text-muted)", fontSize:13}}>
-          🎉 没有待复习的项目
+          ${activeItemHtml}
         </div>
-      </div>
-    );
-  }
-
-  function priBadge(pri) {
-    if (pri.includes("S")) return <span className="pri-badge pri-S">S</span>;
-    if (pri.includes("A")) return <span className="pri-badge pri-A">A</span>;
-    if (pri.includes("B")) return <span className="pri-badge pri-B">B</span>;
-    if (pri.includes("C")) return <span className="pri-badge pri-C">C</span>;
-    return null;
-  }
-
-  function masteryBg(m) {
-    if (m === "🔴") return "var(--red-light)";
-    if (m === "🟡") return "var(--yellow-light)";
-    return "var(--green-light)";
-  }
-
-  return (
-    <div className="card">
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
-        <div className="card-title" style={{margin:0}}>📋 今日待复習 ({items.length})</div>
-      </div>
-      {items.slice(0, 15).map((item, i) => (
-        <a key={i} className="due-item" href={item.url} target="_blank" rel="noopener" style={{background: i % 2 === 0 ? "transparent" : "var(--bg)"}}>
-          <span className={`subj-badge subj-${item.subject}`} style={{fontSize:10, padding:"1px 6px"}}>{item.subject}</span>
-          <span className="due-item-name">{item.name}</span>
-          {item.priority && priBadge(item.priority)}
-          {item.mastery && <span style={{fontSize:12}}>{item.mastery}</span>}
-        </a>
-      ))}
-      {items.length > 15 && (
-        <div style={{textAlign:"center", fontSize:12, color:"var(--text-muted)", padding:"8px 0"}}>
-          +{items.length - 15} more items
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WeeklySchedule() {
-  const dow = dayOfWeek();
-  return (
-    <div className="card">
-      <div className="card-title">📅 Weekly Schedule</div>
-      {WEEKLY.map((w, i) => (
-        <div key={i} className={`week-row ${w.day === dow ? "active" : ""}`}>
-          <div className="week-day">{w.day}</div>
-          <span style={{marginRight:8}}>
-            <span style={{width:8, height:8, borderRadius:"50%", background:SUBJ_COLOR[w.subj], display:"inline-block"}} />
-          </span>
-          <span className={`subj-badge subj-${w.subj}`} style={{marginRight:8, fontSize:10}}>{SUBJ_EMOJI[w.subj]} {w.subj}</span>
-          <span className="week-subject">{w.task}</span>
-          <span className="week-time">{w.mins}m</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PhaseProgress({ studyData, calendarStats }) {
-  const phase = curPhase();
-  const phaseIdx = phase.idx;
-  const totalItems = studyData?.totalItems || 0;
-  const totalGreen = studyData?.totalGreen || 0;
-  const totalYellow = studyData?.totalYellow || 0;
-  const reviewed = studyData?.totalReviewed || 0; // Only actually studied items
-
-  const phaseTargets = {
-    0: { label: "知识点覆盖率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "已学習/総項目数" },
-    1: { label: "过去問完成率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "至少做过一次的题目" },
-    2: { label: "掌握率", calc: () => totalItems > 0 ? Math.round(((totalGreen + totalYellow) / totalItems) * 100) : 0, desc: "🟢+🟡 / 総数" },
-    3: { label: "完全掌握率", calc: () => totalItems > 0 ? Math.round((totalGreen / totalItems) * 100) : 0, desc: "🟢 / 総数" },
-  };
-
-  const target = phaseTargets[phaseIdx] || phaseTargets[0];
-  const pct = target.calc();
-
-  return (
-    <div className="card">
-      <div className="card-title">🎯 Phase Progress</div>
-      
-      {/* Active phase */}
-      <div style={{padding:"14px 16px", background:`${phase.color}08`, borderRadius:12, border:`1.5px solid ${phase.color}25`, marginBottom:14}}>
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6}}>
-          <span style={{fontSize:14, fontWeight:700, color:phase.color}}>▸ {phase.name}</span>
-          <span className="mono" style={{fontSize:22, fontWeight:700, color:phase.color}}>{pct}%</span>
-        </div>
-        <div style={{fontSize:11, color:"var(--text-secondary)", marginBottom:8}}>{phase.desc}</div>
-        <div className="progress-track">
-          <div className="progress-fill" style={{width:`${Math.min(pct,100)}%`, background:phase.color}} />
-        </div>
-        <div style={{display:"flex", justifyContent:"space-between", marginTop:6}}>
-          <span style={{fontSize:10, color:"var(--text-muted)"}}>{target.label}: {target.desc}</span>
-        </div>
-      </div>
-
-      {/* Other phases */}
-      {PHASES.map((p, i) => {
-        if (i === phaseIdx) return null;
-        const t = today();
-        const past = t > p.end;
-        const future = t < p.start;
-        return (
-          <div key={i} style={{marginBottom:6, padding:"6px 12px", opacity: future ? 0.35 : 1}}>
-            <div style={{display:"flex", justifyContent:"space-between", marginBottom:3}}>
-              <span style={{fontSize:12, color:"var(--text-secondary)"}}>{p.name}</span>
-              <span className="mono" style={{fontSize:10, color:"var(--text-muted)"}}>{past ? "✅ 完了" : `${p.start.slice(5)}~`}</span>
-            </div>
-            <div className="progress-track" style={{height:3}}>
-              <div className="progress-fill" style={{height:"100%", width:past?"100%":"0%", background:past?"#ccc":p.color}} />
-            </div>
+        <div class="review-queue-panel">
+          <div class="review-queue-header">
+            <div class="review-queue-title"><span class="icon">📋</span> 今日待復習 (${d.dueToday.length})</div>
+            <div class="review-queue-filters">${filterBtns}</div>
           </div>
-        );
-      })}
-
-      {/* Summary stats */}
-      <div className="grid-3" style={{marginTop:12}}>
-        <div className="stat-box">
-          <div className="stat-label">学習天数</div>
-          <div className="stat-value">{calendarStats?.totalDays || 0}</div>
-        </div>
-        <div className="stat-box">
-          <div className="stat-label">已掌握</div>
-          <div className="stat-value" style={{color:"var(--green)"}}>{totalGreen}</div>
-          <div className="stat-sub">/{totalItems}</div>
-        </div>
-        <div className="stat-box">
-          <div className="stat-label">已学習</div>
-          <div className="stat-value">{reviewed}</div>
-          <div className="stat-sub">/{totalItems}</div>
+          <div class="review-queue-list">
+            ${queueItems || '<div class="empty-state">🎉 今日の復習項目はありません！</div>'}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    </div>`;
 }
 
-function StudyTimer({ onSaved }) {
-  const [subject, setSubject] = useState("");
-  const [running, setRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [saved, setSaved] = useState(false);
-  const startRef = useRef(null);
-  const intervalRef = useRef(null);
+function renderHeatmap(d) {
+  const today = new Date(d.today + 'T00:00:00');
+  const weeks = 26; // ~6 months
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - (weeks * 7) + (7 - startDate.getDay()));
 
-  function start() {
-    if (!subject) return;
-    startRef.current = Date.now();
-    setRunning(true);
-    setSaved(false);
-    setElapsed(0);
-    intervalRef.current = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
-    }, 1000);
-  }
+  let weeksHtml = '';
+  let currentDate = new Date(startDate);
+  const monthLabels = [];
+  let lastMonth = -1;
 
-  function stop() {
-    clearInterval(intervalRef.current);
-    setRunning(false);
-  }
+  for (let w = 0; w < weeks; w++) {
+    let weekHtml = '';
+    for (let day = 0; day < 7; day++) {
+      const ds = currentDate.toISOString().split('T')[0];
+      const min = d.heatmap[ds] || 0;
+      const level = min === 0 ? '' : min < 30 ? 'l1' : min < 60 ? 'l2' : min < 120 ? 'l3' : 'l4';
+      const isToday = ds === d.today ? 'today' : '';
+      const isFuture = currentDate > today;
+      const tip = isFuture ? '' : `data-tip="${ds}: ${min}min"`;
 
-  async function save() {
-    const mins = Math.round(elapsed / 60);
-    if (mins < 1) return;
-    const todayStr = today();
-    try {
-      await fetchAPI("create-log", {
-        title: `${subject} 学習`,
-        date: todayStr,
-        minutes: mins,
-        method: "Timer",
-      });
-      await fetchAPI("create-checkin", {
-        date: todayStr,
-        minutes: mins,
-        [subject.toLowerCase()]: true,
-      });
-      setSaved(true);
-      setElapsed(0);
-      if (onSaved) onSaved();
-    } catch (e) {
-      console.error(e);
+      if (currentDate.getMonth() !== lastMonth && day === 0) {
+        monthLabels.push({ week: w, name: currentDate.toLocaleString('en', { month: 'short' }) });
+        lastMonth = currentDate.getMonth();
+      }
+
+      weekHtml += isFuture
+        ? `<div class="heatmap-day" style="opacity:0.3"></div>`
+        : `<div class="heatmap-day ${level} ${isToday}" ${tip}></div>`;
+      currentDate.setDate(currentDate.getDate() + 1);
     }
+    weeksHtml += `<div class="heatmap-week">${weekHtml}</div>`;
   }
 
-  function reset() {
-    clearInterval(intervalRef.current);
-    setRunning(false);
-    setElapsed(0);
-    setSaved(false);
-  }
+  const monthsHtml = monthLabels.map(m =>
+    `<span style="margin-left:${m.week === 0 ? 0 : (m.week - (monthLabels[0]?.week || 0)) * 16}px">${m.name}</span>`
+  ).join('');
 
-  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
-  const ss = String(elapsed % 60).padStart(2, "0");
-
-  return (
-    <div className="card">
-      <div className="card-title">⏱ Study Timer</div>
-      
-      <div className="timer-subject-btns">
-        {SUBJECTS.map(s => (
-          <button key={s} className={`subj-btn ${subject === s ? "active" : ""}`} onClick={() => !running && setSubject(s)}>
-            {SUBJ_EMOJI[s]} {s}
-          </button>
-        ))}
+  return `
+    <div class="card heatmap-section">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📊</span> 学習ヒートマップ</div>
+        <div class="card-badge">Past 6 months</div>
       </div>
-
-      <div className="timer-display">{mm}:{ss}</div>
-
-      <div style={{display:"flex", justifyContent:"center", gap:10}}>
-        {!running && !elapsed && (
-          <button className="timer-btn btn-start" onClick={start} disabled={!subject}>
-            ▶ Start
-          </button>
-        )}
-        {running && (
-          <button className="timer-btn btn-stop" onClick={stop}>
-            ⏸ Stop
-          </button>
-        )}
-        {!running && elapsed > 0 && !saved && (
-          <>
-            <button className="timer-btn btn-save" onClick={save}>
-              💾 Save ({Math.round(elapsed/60)}min)
-            </button>
-            <button className="timer-btn btn-outline" onClick={reset}>Reset</button>
-          </>
-        )}
-        {saved && (
-          <div style={{fontSize:14, color:"var(--green)", fontWeight:600, padding:"10px 0"}}>✅ 保存成功!</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RecentLogs({ logs }) {
-  if (!logs || logs.length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">📝 最近の復習記録</div>
-        <div style={{textAlign:"center", padding:"16px 0", color:"var(--text-muted)", fontSize:13}}>
-          まだ記録がありません。Timer で学習を始めましょう!
+      <div class="heatmap-wrapper">
+        <div class="heatmap-grid">
+          <div class="heatmap-days-labels">
+            <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+          </div>
+          ${weeksHtml}
+        </div>
+        <div class="heatmap-legend">
+          <span>Less</span>
+          <div class="heatmap-legend-box" style="background:var(--bg-warm)"></div>
+          <div class="heatmap-legend-box" style="background:#e0d5c3"></div>
+          <div class="heatmap-legend-box" style="background:#f5c882"></div>
+          <div class="heatmap-legend-box" style="background:#e8a44a"></div>
+          <div class="heatmap-legend-box" style="background:var(--accent)"></div>
+          <span>More</span>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="card">
-      <div className="card-title">📝 最近の復習記録</div>
-      {logs.slice(0, 8).map((l, i) => (
-        <div key={i} style={{display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom: i < 7 ? "1px solid var(--border)" : "none"}}>
-          <span className={`subj-badge subj-${l.subject}`} style={{fontSize:10, padding:"1px 6px"}}>{l.subject || "?"}</span>
-          <span style={{flex:1, fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{l.title}</span>
-          <span className="mono" style={{fontSize:11, color:"var(--text-muted)"}}>{l.minutes}m</span>
-          <span style={{fontSize:11, color:"var(--text-muted)"}}>{l.date?.slice(5)}</span>
-        </div>
-      ))}
-    </div>
-  );
+    </div>`;
 }
 
-// ── Main App ──────────────────────────────────────────
+function renderMastery(d) {
+  const subjects = Object.entries(d.subjectStats).filter(([k]) => k).sort((a, b) => b[1].total - a[1].total);
+  const rows = subjects.map(([name, s]) => {
+    const total = s.total || 1;
+    const gPct = (s.green / total * 100).toFixed(1);
+    const yPct = (s.yellow / total * 100).toFixed(1);
+    const rPct = (s.red / total * 100).toFixed(1);
+    return `
+      <div class="mastery-subject">
+        <div class="mastery-label-row">
+          <span class="mastery-subject-name">${name}</span>
+          <span class="mastery-counts">🟢${s.green} 🟡${s.yellow} 🔴${s.red} ⚪${s.notStudied}</span>
+        </div>
+        <div class="mastery-bar">
+          <div class="seg-green" style="width:${gPct}%"></div>
+          <div class="seg-yellow" style="width:${yPct}%"></div>
+          <div class="seg-red" style="width:${rPct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
 
-function App() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📊</span> Mastery Progress</div>
+      </div>
+      <div class="card-body">${rows || '<div class="empty-state">No data yet</div>'}</div>
+    </div>`;
+}
 
-  const loadData = useCallback(async () => {
-    try {
-      const d = await fetchAPI("all");
-      setData(d);
-      setError(null);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+function renderDueToday(d) {
+  const items = d.dueToday.slice(0, 15).map(item => {
+    const pLabel = item.priority ? item.priority.charAt(2) : '';
+    const pClass = pLabel === 'S' ? 'S' : pLabel === 'A' ? 'A' : pLabel === 'B' ? 'B' : 'C';
+    return `
+      <div class="due-item">
+        <span class="due-subject ${item.subject}">${item.subject}</span>
+        <span class="due-name" title="${item.name}">${item.name}</span>
+        ${pLabel ? `<span class="due-priority rq-priority ${pClass}">${pLabel}</span>` : ''}
+        <span class="due-mastery">${item.mastery || '⚪'}</span>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📋</span> 今日待復習</div>
+        <div class="card-badge">${d.dueToday.length} items</div>
+      </div>
+      <div class="card-body">
+        <div class="due-list">${items || '<div class="empty-state">🎉 Nothing due today!</div>'}</div>
+      </div>
+    </div>`;
+}
+
+function renderPhaseProgress(d) {
+  const phases = [
+    { key: 'Phase 0 热身', name: 'Phase 0: 热身', cls: 'p0', color: '#9e9e9e', target: 7 },
+    { key: 'Phase 1 基础', name: 'Phase 1: 基础', cls: 'p1', color: 'var(--blue)', target: 60 },
+    { key: 'Phase 2 过去问', name: 'Phase 2: 过去问', cls: 'p2', color: 'var(--accent)', target: 60 },
+    { key: 'Phase 3 弱点攻克', name: 'Phase 3: 弱点攻克', cls: 'p3', color: 'var(--red)', target: 30 },
+    { key: 'Phase 4 冲刺', name: 'Phase 4: 冲刺', cls: 'p4', color: 'var(--purple)', target: 14 },
+  ];
+
+  const rows = phases.map(p => {
+    const data = d.phaseItems[p.key] || { count: 0, totalMinutes: 0 };
+    const pct = Math.min(100, (data.count / p.target * 100)).toFixed(0);
+    return `
+      <div class="phase-item">
+        <div class="phase-num ${p.cls}">${p.cls.charAt(1)}</div>
+        <div class="phase-info">
+          <div class="phase-name">${p.name}</div>
+          <div class="phase-meta">${data.count}日 / ${p.target}日 · ${Math.round(data.totalMinutes/60)}h</div>
+          <div class="phase-bar-bg">
+            <div class="phase-bar-fill" style="width:${pct}%;background:${p.color}"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🎯</span> Phase Progress</div>
+      </div>
+      <div class="card-body"><div class="phase-list">${rows}</div></div>
+    </div>`;
+}
+
+function renderWeekPlan() {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((currentDay + 6) % 7));
+
+  const days = [];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const jsDay = d.getDay();
+    const isToday = d.toDateString() === today.toDateString();
+    const tasks = WEEK_PLAN[jsDay] || [];
+    days.push(`
+      <div class="week-day ${isToday ? 'today' : ''}">
+        <div class="week-day-label">${dayNames[i]}</div>
+        <div class="week-day-date">${d.getDate()}</div>
+        <div class="week-day-tasks">${tasks.join('<br>')}</div>
+      </div>`);
+  }
+
+  return `
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📅</span> 週間計画</div>
+      </div>
+      <div class="card-body">
+        <div class="week-grid">${days.join('')}</div>
+      </div>
+    </div>`;
+}
+
+function renderRecentLogs(d) {
+  const logs = d.logs.slice(0, 8).map(l => `
+    <div class="log-item">
+      <span class="log-date">${l.reviewDate || '—'}</span>
+      <span class="log-title">${l.title}</span>
+      <span class="log-time">${l.timeSpent}min ${l.mastery || ''}</span>
+    </div>`).join('');
+
+  return `
+    <div class="card" style="margin-top:0">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📝</span> 最近の復習記録</div>
+      </div>
+      <div class="card-body">${logs || '<div class="empty-state">まだ復習記録がありません</div>'}</div>
+    </div>`;
+}
+
+// ===== Timer Functions =====
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(sec % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function setTimerSubject(subj) {
+  timerState.subject = subj;
+  render();
+}
+
+function startTimer() {
+  if (timerState.running) return;
+  timerState.running = true;
+  timerState.startTime = new Date().toISOString();
+  timerState.interval = setInterval(() => {
+    timerState.seconds++;
+    updateTimerDisplay();
+  }, 1000);
+  render();
+}
+
+function stopTimer() {
+  if (!timerState.running) return;
+  clearInterval(timerState.interval);
+  timerState.running = false;
+
+  const minutes = Math.round(timerState.seconds / 60);
+
+  if (timerState.selectedItem && minutes >= 1) {
+    // Show review completion modal
+    showReviewModal(timerState.selectedItem, minutes);
+  } else if (minutes >= 1) {
+    // No item selected, still log the time
+    showToast(`${minutes}分の学習を記録しました`, 'success');
+  }
+
+  render();
+}
+
+function resetTimer() {
+  clearInterval(timerState.interval);
+  timerState.running = false;
+  timerState.seconds = 0;
+  timerState.selectedItem = null;
+  timerState.startTime = null;
+  render();
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  if (el) el.textContent = formatTime(timerState.seconds);
+}
+
+function selectReviewItem(itemId) {
+  if (timerState.completedItems.has(itemId)) return;
+  const item = DATA.dueToday.find(i => i.id === itemId);
+  if (item) {
+    timerState.selectedItem = item;
+    // Auto-set subject
+    if (item.subject) timerState.subject = item.subject;
+    render();
+  }
+}
+
+function highlightSelectedItem() {
+  if (!timerState.selectedItem) return;
+  const items = document.querySelectorAll('.review-queue-item');
+  items.forEach(el => {
+    if (el.onclick?.toString().includes(timerState.selectedItem.id)) {
+      el.classList.add('selected');
     }
-  }, []);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="loading-spinner" />
-        <div style={{fontSize:13}}>Loading Dashboard...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="dashboard">
-        <div className="card" style={{textAlign:"center", padding:40}}>
-          <div style={{fontSize:20, marginBottom:8}}>⚠️</div>
-          <div style={{fontSize:14, color:"var(--red)"}}>接続エラー</div>
-          <div style={{fontSize:12, color:"var(--text-secondary)", marginTop:4}}>{error}</div>
-          <button className="timer-btn btn-outline" style={{marginTop:12}} onClick={loadData}>再試行</button>
-        </div>
-      </div>
-    );
-  }
-
-  const summary = data?.summary || {};
-  const calStats = data?.calendarStats || {};
-
-  return (
-    <div className="dashboard">
-      <div className="header">
-        <div className="header-title">京大社情</div>
-        <div className="header-main">Study Dashboard</div>
-        <div className="header-sub">{today()} · がんばれ! 🌸</div>
-      </div>
-
-      {/* Row 1: Countdown + Stats */}
-      <CountdownCard daysLeft={summary.daysUntilExam} />
-      <StatsRow calendarStats={calStats} />
-
-      {/* Row 2: Calendar + Timer */}
-      <div className="grid-2">
-        <HeatmapCalendar checkins={data?.checkins} />
-        <StudyTimer onSaved={loadData} />
-      </div>
-
-      {/* Row 3: Mastery + Due Today */}
-      <div className="grid-2">
-        <MasteryProgress studyData={summary} />
-        <DueToday items={data?.dueItems} />
-      </div>
-
-      {/* Row 4: Weekly Schedule + Phase Progress */}
-      <div className="grid-2">
-        <WeeklySchedule />
-        <PhaseProgress studyData={summary} calendarStats={calStats} />
-      </div>
-
-      {/* Row 5: Recent Logs */}
-      <RecentLogs logs={data?.logs} />
-
-      <div style={{textAlign:"center", padding:"20px 0", fontSize:11, color:"var(--text-muted)"}}>
-        Built with 💛 for Chi · v2.0
-      </div>
-    </div>
-  );
+  });
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+function setReviewFilter(filter) {
+  reviewFilter = filter;
+  render();
+}
+
+// ===== Review Modal =====
+function showReviewModal(item, minutes) {
+  selectedMastery = null;
+  document.getElementById('modalItemName').textContent = `${item.subject} · ${item.name}`;
+  document.getElementById('modalNotes').value = '';
+  document.querySelectorAll('.mastery-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('reviewModal').classList.add('show');
+
+  // Store data for submission
+  window._reviewData = { item, minutes };
+}
+
+function closeReviewModal() {
+  document.getElementById('reviewModal').classList.remove('show');
+}
+
+function selectMastery(btn) {
+  document.querySelectorAll('.mastery-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedMastery = btn.dataset.value;
+}
+
+async function submitReview() {
+  if (!selectedMastery) {
+    showToast('请选择掌握度', 'error');
+    return;
+  }
+
+  const { item, minutes } = window._reviewData;
+  const method = document.getElementById('modalMethod').value;
+  const notes = document.getElementById('modalNotes').value;
+
+  closeReviewModal();
+  showToast('記録中...', '');
+
+  try {
+    await fetch(`${API_BASE}?action=complete-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studyItemId: item.id,
+        studyItemName: item.name,
+        subject: item.subject,
+        timeSpent: minutes,
+        mastery: selectedMastery,
+        method: method,
+        notes: notes,
+        startTime: timerState.startTime,
+        endTime: new Date().toISOString(),
+      }),
+    });
+
+    timerState.completedItems.add(item.id);
+    timerState.seconds = 0;
+    timerState.selectedItem = null;
+    timerState.startTime = null;
+
+    showToast(`✓ ${item.name} の復習を記録しました！`, 'success');
+
+    // Refresh data
+    setTimeout(async () => {
+      const resp = await fetch(`${API_BASE}?action=getAll`);
+      DATA = await resp.json();
+      render();
+    }, 1500);
+
+  } catch (e) {
+    showToast('記録に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// ===== Toast =====
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show ' + (type || '');
+  clearTimeout(window._toastTimeout);
+  window._toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// ===== Start =====
+init();
 </script>
 </body>
 </html>
