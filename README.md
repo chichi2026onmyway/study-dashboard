@@ -1,4 +1,4 @@
-# 🎯 京大社情 Study Dashboard
+# 🎯 Study Dashboard
 
 打开 Notion 就能看到的精美学习仪表板，带计时器、热力图、进度追踪。
 
