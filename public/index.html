@@ -248,6 +248,18 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .qf:hover { border-color: var(--accent); color: var(--accent); }
 .qf.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
 .queue-list { max-height: 55vh; overflow-y: auto; }
+
+/* Queue Section Dividers */
+.queue-section {
+  padding: 8px 16px 4px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card-alt);
+}
+.queue-section .line { flex: 1; height: 1px; background: var(--border-light); }
+.queue-section.review-section { color: var(--accent); }
+.queue-section.new-section { color: var(--blue); }
+
 .qi {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 16px; border-bottom: 1px solid var(--border-light);
@@ -264,6 +276,12 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   flex-shrink: 0; font-size: 10px; transition: all 0.15s;
 }
 .qi.completed .qi-check { background: var(--green); border-color: var(--green); color: #fff; }
+.qi-type-tag {
+  font-size: 8px; font-weight: 800; padding: 1px 5px;
+  border-radius: 3px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.qi-type-tag.new { background: var(--blue-light); color: var(--blue); }
+.qi-type-tag.review { background: var(--accent-light); color: var(--accent); }
 .qi-sub {
   font-size: 9px; font-weight: 700; padding: 2px 7px;
   border-radius: 4px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.3px;
@@ -292,6 +310,44 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .qi:hover .qi-done-btn { opacity: 1; }
 .qi.completed .qi-done-btn { display: none; }
+
+/* ===== Daily Plan Summary Card ===== */
+.plan-summary {
+  background: linear-gradient(135deg, #fff8f0, #fff5ec);
+  border: 1px solid #f0dcc8; border-radius: var(--radius);
+  padding: 16px 18px; margin-bottom: 14px;
+}
+.plan-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.plan-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.plan-meta { font-size: 11px; color: var(--text-secondary); }
+.plan-stats {
+  display: flex; gap: 12px; margin-bottom: 12px;
+}
+.plan-stat {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; background: rgba(255,255,255,0.7);
+  border-radius: var(--radius-xs); border: 1px solid rgba(240,220,200,0.4);
+  font-size: 12px;
+}
+.plan-stat .num { font-family: var(--mono); font-weight: 700; font-size: 16px; }
+.plan-stat .lbl { color: var(--text-secondary); font-size: 10px; font-weight: 600; }
+.plan-stat.new-stat .num { color: var(--blue); }
+.plan-stat.review-stat .num { color: var(--accent); }
+.plan-stat.time-stat .num { color: var(--green); }
+
+/* Progress ring */
+.plan-progress {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; background: rgba(255,255,255,0.6);
+  border-radius: var(--radius-sm); border: 1px solid rgba(240,220,200,0.3);
+}
+.progress-ring { width: 44px; height: 44px; flex-shrink: 0; }
+.progress-ring circle { fill: none; stroke-width: 4; stroke-linecap: round; }
+.progress-ring .bg { stroke: var(--bg-warm); }
+.progress-ring .fg { stroke: var(--accent); transition: stroke-dashoffset 0.6s ease; }
+.plan-progress-text { flex: 1; }
+.plan-progress-text .big { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+.plan-progress-text .small { font-size: 11px; color: var(--text-secondary); }
 
 /* ===== Calendar Page ===== */
 .gcal-embed {
@@ -379,6 +435,26 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .log-title { flex: 1; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .log-time { font-size: 11px; color: var(--text-secondary); font-weight: 600; flex-shrink: 0; }
 
+/* ===== Subject Distribution (Overview) ===== */
+.subject-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+.subject-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; border: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+.subject-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ===== Today's Queue Preview ===== */
+.queue-preview-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+}
+.queue-preview-item:last-child { border-bottom: none; }
+
 /* ===== Modal ===== */
 .modal-overlay {
   position: fixed; inset: 0;
@@ -455,6 +531,18 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ===== Start Button (CTA) ===== */
+.start-study-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px; margin-top: 12px;
+  background: linear-gradient(135deg, var(--accent), #e8884a);
+  color: #fff; border-radius: 14px; font-size: 15px; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(217,112,54,0.3);
+  transition: all 0.2s;
+}
+.start-study-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(217,112,54,0.4); }
+.start-study-btn:active { transform: translateY(0); }
+
 /* ===== Responsive ===== */
 @media (max-width: 420px) {
   .stats-row { grid-template-columns: repeat(2, 1fr); }
@@ -464,6 +552,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   .wday { padding: 6px 1px; }
   .wday-date { font-size: 14px; }
   .wday-tasks { font-size: 7px; }
+  .plan-stats { flex-wrap: wrap; gap: 8px; }
 }
 @media (min-width: 641px) {
   .app { border-left: 1px solid var(--border-light); border-right: 1px solid var(--border-light); }
@@ -485,7 +574,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 <div class="modal-overlay" id="reviewModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <h3>📝 復習完了！</h3>
+    <h3>📝 学習完了！</h3>
     <div class="modal-item-name" id="modalItemName"></div>
     <div class="modal-field">
       <label>掌握度</label>
@@ -527,11 +616,11 @@ let selectedMastery = null;
 
 const API = '/api/notion';
 const SUBS = [
-  { key: 'CS', icon: '💻' },
-  { key: 'AI', icon: '🤖' },
-  { key: 'HCI', icon: '👥' },
-  { key: 'SE', icon: '⚙️' },
-  { key: 'IR', icon: '🔍' },
+  { key: 'CS', icon: '💻', color: '#b8700f' },
+  { key: 'AI', icon: '🤖', color: '#2d8055' },
+  { key: 'HCI', icon: '👥', color: '#b83b36' },
+  { key: 'SE', icon: '⚙️', color: '#6b4fa0' },
+  { key: 'IR', icon: '🔍', color: '#3567b8' },
 ];
 const WEEK_PLAN = {
   1: ['💻 CS基础', '🤖 AI知識'],
@@ -546,11 +635,26 @@ const WEEK_PLAN = {
 // ★ Google Calendar embed URL — replace with yours!
 const GCAL_URL = '';
 
-// ===== Priority extractor (FIXED: emoji is 2 chars in JS) =====
+// ===== Helpers =====
 function getPri(str) {
   if (!str) return { label: '', cls: '' };
   const m = str.match(/[SABC]/);
   return m ? { label: m[0], cls: m[0] } : { label: '', cls: '' };
+}
+
+function getCompletedCount() {
+  if (!DATA || !DATA.dailyPlan) return 0;
+  const serverCompleted = new Set(DATA.todayCompletedIds || []);
+  let count = 0;
+  DATA.dailyPlan.plan.forEach(item => {
+    if (timer.completedItems.has(item.id) || serverCompleted.has(item.id)) count++;
+  });
+  return count;
+}
+
+function isItemCompleted(id) {
+  const serverCompleted = new Set(DATA.todayCompletedIds || []);
+  return timer.completedItems.has(id) || serverCompleted.has(id);
 }
 
 // ===== Init =====
@@ -576,7 +680,7 @@ function renderApp() {
   const d = DATA;
   const tabs = [
     { icon: '📊', label: 'Overview' },
-    { icon: '📋', label: 'Review' },
+    { icon: '📋', label: 'Study' },
     { icon: '📅', label: 'Schedule' },
     { icon: '📈', label: 'Progress' },
   ];
@@ -595,7 +699,7 @@ function renderApp() {
       </div>
     </div>
     <div class="page ${currentTab === 0 ? 'active' : ''}">${renderOverview(d)}</div>
-    <div class="page ${currentTab === 1 ? 'active' : ''}">${renderReview(d)}</div>
+    <div class="page ${currentTab === 1 ? 'active' : ''}">${renderStudy(d)}</div>
     <div class="page ${currentTab === 2 ? 'active' : ''}">${renderSchedule(d)}</div>
     <div class="page ${currentTab === 3 ? 'active' : ''}">${renderProgress(d)}</div>
   `;
@@ -620,16 +724,55 @@ function updateIndicator() {
 // ===== TAB 1: Overview =====
 function renderOverview(d) {
   const studied = d.masteryStats.green + d.masteryStats.yellow + d.masteryStats.red;
+  const plan = d.dailyPlan || { plan: [], reviewCount: 0, newCount: 0, totalCount: 0, estimatedMinutes: 0 };
+  const completed = getCompletedCount();
+  const total = plan.totalCount;
+  const pct = total > 0 ? Math.round(completed / total * 100) : 0;
+
   return `
     <div class="stats-row">
       <div class="stat-card"><div class="stat-emoji">🔥</div><div class="stat-value">${d.streak}</div><div class="stat-label">連続日数</div></div>
       <div class="stat-card"><div class="stat-emoji">⏱</div><div class="stat-value">${d.totalHours}<span class="unit">h</span></div><div class="stat-label">累計時間</div></div>
       <div class="stat-card"><div class="stat-emoji">📚</div><div class="stat-value">${studied}<span class="unit">/${d.masteryStats.total}</span></div><div class="stat-label">学習済</div></div>
-      <div class="stat-card"><div class="stat-emoji">📋</div><div class="stat-value">${d.dueToday.length}</div><div class="stat-label">待復習</div></div>
+      <div class="stat-card"><div class="stat-emoji">✅</div><div class="stat-value">${completed}<span class="unit">/${total}</span></div><div class="stat-label">今日完了</div></div>
     </div>
+    ${renderDailyPlanSummary(d, plan, completed)}
     ${renderHeatmap(d)}
     ${renderMastery(d)}
-    ${renderQuickDue(d)}`;
+    ${renderQuickDue(d, plan)}`;
+}
+
+function renderDailyPlanSummary(d, plan, completed) {
+  const total = plan.totalCount;
+  const pct = total > 0 ? Math.round(completed / total * 100) : 0;
+  const circumference = 2 * Math.PI * 18;
+  const dashoffset = circumference - (pct / 100 * circumference);
+
+  return `<div class="plan-summary">
+    <div class="plan-header">
+      <div class="plan-title">📋 今日の学習プラン</div>
+      <div class="plan-meta">${plan.isWeekend ? '週末モード' : '平日モード'}</div>
+    </div>
+    <div class="plan-stats">
+      <div class="plan-stat new-stat"><div><div class="num">${plan.newCount}</div><div class="lbl">新規学習</div></div></div>
+      <div class="plan-stat review-stat"><div><div class="num">${plan.reviewCount}</div><div class="lbl">復習</div></div></div>
+      <div class="plan-stat time-stat"><div><div class="num">~${plan.estimatedMinutes}</div><div class="lbl">推定(分)</div></div></div>
+    </div>
+    <div class="plan-progress">
+      <svg class="progress-ring" viewBox="0 0 44 44">
+        <circle class="bg" cx="22" cy="22" r="18"/>
+        <circle class="fg" cx="22" cy="22" r="18"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${dashoffset}"
+          transform="rotate(-90 22 22)"/>
+      </svg>
+      <div class="plan-progress-text">
+        <div class="big">${pct}% 完了</div>
+        <div class="small">${completed}/${total} タスク · 残り${plan.unstudiedRemaining || 0}題未割当</div>
+      </div>
+    </div>
+    ${total > 0 ? `<button class="start-study-btn" onclick="switchTab(1)">▶ 学習を始める</button>` : ''}
+  </div>`;
 }
 
 function renderHeatmap(d) {
@@ -685,45 +828,85 @@ function renderMastery(d) {
   return `<div class="card"><div class="card-header"><div class="card-title"><span class="icon">🎯</span> Mastery</div></div><div class="card-body">${rows || '<div class="empty">No data</div>'}</div></div>`;
 }
 
-function renderQuickDue(d) {
-  if (!d.dueToday.length) return '';
-  const items = d.dueToday.slice(0, 5).map(item => {
+function renderQuickDue(d, plan) {
+  const items = plan.plan.slice(0, 5);
+  if (!items.length) return '';
+  const rows = items.map(item => {
     const p = getPri(item.priority);
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="switchTab(1)">
+    const done = isItemCompleted(item.id);
+    const typeTag = item.queueType === 'new'
+      ? '<span class="qi-type-tag new">NEW</span>'
+      : '<span class="qi-type-tag review">復習</span>';
+    return `<div class="queue-preview-item ${done ? 'completed' : ''}" onclick="switchTab(1)" style="${done ? 'opacity:0.4' : ''}">
+      ${typeTag}
       <span class="qi-sub ${item.subject}">${item.subject}</span>
-      <span class="qi-name">${item.name}</span>
+      <span class="qi-name">${item.name || '(untitled)'}</span>
       ${p.label ? `<span class="qi-pri ${p.cls}">${p.label}</span>` : ''}
-      <span style="font-size:13px;flex-shrink:0">${item.mastery || '⚪'}</span>
+      <span style="font-size:13px;flex-shrink:0">${done ? '✅' : (item.mastery || '⚪')}</span>
     </div>`;
   }).join('');
   return `<div class="card">
-    <div class="card-header"><div class="card-title"><span class="icon">📋</span> 今日待復習</div>
+    <div class="card-header"><div class="card-title"><span class="icon">📋</span> 今日のタスク</div>
       <button class="card-badge" onclick="switchTab(1)" style="cursor:pointer;border:none;font-family:var(--font)">全て見る →</button>
-    </div><div class="card-body" style="padding-top:0">${items}</div></div>`;
+    </div><div class="card-body" style="padding-top:0">${rows}</div></div>`;
 }
 
-// ===== TAB 2: Review =====
-function renderReview(d) {
+// ===== TAB 2: Study (was "Review") =====
+function renderStudy(d) {
+  const plan = d.dailyPlan || { plan: [], reviewCount: 0, newCount: 0, totalCount: 0 };
+
   const subBtns = SUBS.map(s => `<button class="tsub ${timer.subject === s.key ? 'active' : ''}" onclick="setSubject('${s.key}')">${s.icon} ${s.key}</button>`).join('');
   const activeHtml = timer.selectedItem
-    ? `<div class="timer-active"><div class="lbl">正在复习</div><div class="name">${timer.selectedItem.name}</div></div>`
-    : `<div class="timer-active empty"><div class="lbl">选择项目</div><div class="name">从下方列表选择一题</div></div>`;
-  const filterBtns = ['all', ...SUBS.map(s => s.key)].map(f =>
-    `<button class="qf ${reviewFilter === f ? 'active' : ''}" onclick="setFilter('${f}')">${f === 'all' ? '全部' : f}</button>`).join('');
-  const filtered = d.dueToday.filter(item => reviewFilter === 'all' || item.subject === reviewFilter);
-  const queueHtml = filtered.length ? filtered.map(item => {
-    const p = getPri(item.priority);
-    const sel = timer.selectedItem?.id === item.id;
-    const done = timer.completedItems.has(item.id);
-    return `<div class="qi ${sel ? 'selected' : ''} ${done ? 'completed' : ''}" data-id="${item.id}" onclick="selectItem('${item.id}')">
-      <div class="qi-check">${done ? '✓' : ''}</div>
-      <span class="qi-sub ${item.subject}">${item.subject || '?'}</span>
-      <span class="qi-name" title="${item.name}">${item.name || '(untitled)'}</span>
-      ${p.label ? `<span class="qi-pri ${p.cls}">${p.label}</span>` : ''}
-      <span class="qi-mastery">${item.mastery || '⚪'}</span>
-      ${!done ? `<button class="qi-done-btn" onclick="event.stopPropagation();quickComplete('${item.id}')">完了</button>` : ''}
+    ? `<div class="timer-active"><div class="lbl">学習中</div><div class="name">${timer.selectedItem.subject ? timer.selectedItem.subject + ' · ' : ''}${timer.selectedItem.name}</div></div>`
+    : `<div class="timer-active empty"><div class="lbl">項目を選択</div><div class="name">下のリストから1つ選んでスタート</div></div>`;
+
+  // Filter buttons: all + subjects + new/review type
+  const filterBtns = [
+    `<button class="qf ${reviewFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">全部</button>`,
+    `<button class="qf ${reviewFilter === 'new' ? 'active' : ''}" onclick="setFilter('new')" style="${reviewFilter === 'new' ? 'background:var(--blue-light);border-color:var(--blue);color:var(--blue)' : ''}">🆕 新規</button>`,
+    `<button class="qf ${reviewFilter === 'review' ? 'active' : ''}" onclick="setFilter('review')" style="${reviewFilter === 'review' ? 'background:var(--accent-light);border-color:var(--accent);color:var(--accent)' : ''}">🔄 復習</button>`,
+    ...SUBS.map(s => `<button class="qf ${reviewFilter === s.key ? 'active' : ''}" onclick="setFilter('${s.key}')">${s.key}</button>`)
+  ].join('');
+
+  // Filter the plan items
+  let filtered = plan.plan;
+  if (reviewFilter === 'new') {
+    filtered = filtered.filter(i => i.queueType === 'new');
+  } else if (reviewFilter === 'review') {
+    filtered = filtered.filter(i => i.queueType === 'review');
+  } else if (reviewFilter !== 'all') {
+    filtered = filtered.filter(i => i.subject === reviewFilter);
+  }
+
+  // Build queue HTML with section dividers
+  let queueHtml = '';
+  if (filtered.length === 0) {
+    queueHtml = `<div class="empty">
+      ${plan.totalCount === 0
+        ? '📭 Notionにまだ学習項目がありません。<br>データベースに問題を追加してください。'
+        : '🎉 このフィルタに該当するタスクはありません'}
     </div>`;
-  }).join('') : '<div class="empty">🎉 今日の復習なし！お疲れ様！</div>';
+  } else {
+    // Group by type
+    const reviewItems = filtered.filter(i => i.queueType === 'review');
+    const newItems = filtered.filter(i => i.queueType === 'new');
+
+    if (reviewFilter === 'all' || reviewFilter === 'review' || SUBS.some(s => s.key === reviewFilter)) {
+      if (reviewItems.length > 0) {
+        queueHtml += `<div class="queue-section review-section">🔄 復習 (${reviewItems.length})<div class="line"></div></div>`;
+        queueHtml += reviewItems.map(item => renderQueueItem(item)).join('');
+      }
+    }
+    if (reviewFilter === 'all' || reviewFilter === 'new' || SUBS.some(s => s.key === reviewFilter)) {
+      if (newItems.length > 0) {
+        queueHtml += `<div class="queue-section new-section">🆕 新規学習 (${newItems.length})<div class="line"></div></div>`;
+        queueHtml += newItems.map(item => renderQueueItem(item)).join('');
+      }
+    }
+  }
+
+  // Completed count
+  const completed = getCompletedCount();
 
   return `
     <div class="timer-card">
@@ -736,14 +919,37 @@ function renderReview(d) {
       ${activeHtml}
     </div>
     <div class="card" style="overflow:visible">
-      <div class="card-header"><div class="card-title"><span class="icon">📋</span> 復習キュー</div><div class="card-badge">${d.dueToday.length} items</div></div>
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📋</span> 学習キュー</div>
+        <div class="card-badge">${completed}/${plan.totalCount} 完了</div>
+      </div>
       <div class="queue-filters">${filterBtns}</div>
       <div class="queue-list">${queueHtml}</div>
     </div>`;
 }
 
+function renderQueueItem(item) {
+  const p = getPri(item.priority);
+  const sel = timer.selectedItem?.id === item.id;
+  const done = isItemCompleted(item.id);
+  const typeTag = item.queueType === 'new'
+    ? '<span class="qi-type-tag new">NEW</span>'
+    : '<span class="qi-type-tag review">復習</span>';
+
+  return `<div class="qi ${sel ? 'selected' : ''} ${done ? 'completed' : ''}" data-id="${item.id}" onclick="selectItem('${item.id}')">
+    <div class="qi-check">${done ? '✓' : ''}</div>
+    ${typeTag}
+    <span class="qi-sub ${item.subject}">${item.subject || '?'}</span>
+    <span class="qi-name" title="${item.name}">${item.name || '(untitled)'}</span>
+    ${p.label ? `<span class="qi-pri ${p.cls}">${p.label}</span>` : ''}
+    <span class="qi-mastery">${item.mastery || '⚪'}</span>
+    ${!done ? `<button class="qi-done-btn" onclick="event.stopPropagation();quickComplete('${item.id}')">完了</button>` : ''}
+  </div>`;
+}
+
 // ===== TAB 3: Schedule =====
 function renderSchedule(d) {
+  const plan = d.dailyPlan || { plan: [] };
   const calHtml = GCAL_URL
     ? `<div class="gcal-embed"><iframe src="${GCAL_URL}" frameborder="0" scrolling="no"></iframe></div>`
     : `<div class="gcal-embed"><div class="gcal-setup">
@@ -766,38 +972,53 @@ function renderSmartRec(d) {
   const now = new Date();
   const dow = now.getDay();
   const isWE = dow === 0 || dow === 6;
-  const weakest = Object.entries(d.subjectStats).filter(([k]) => k)
-    .sort((a, b) => (b[1].red + b[1].notStudied) - (a[1].red + a[1].notStudied))
-    .slice(0, 2).map(([k]) => k);
+  const plan = d.dailyPlan || { plan: [] };
+
+  // Build schedule from actual plan items
   const sched = [];
+  const reviewItems = plan.plan.filter(i => i.queueType === 'review');
+  const newItems = plan.plan.filter(i => i.queueType === 'new');
 
   if (isWE) {
-    sched.push({ time: '9:00', label: 'Anki復習 + 日本語' });
-    const top = d.dueToday.filter(i => { const p = getPri(i.priority); return p.label === 'S' || p.label === 'A'; }).slice(0, 2);
-    top.forEach(item => sched.push({ time: '10:00', label: item.name, sub: item.subject }));
-    sched.push({ time: '11:00', label: `${weakest[0] || 'CS'} 過去問演習`, sub: weakest[0] });
-    sched.push({ time: '14:00', label: '知識点整理 + ノート', sub: weakest[1] });
-    sched.push({ time: '16:00', label: '弱点復習 + Notion整理' });
+    sched.push({ time: '9:00', label: '📖 今日の復習タスク開始', count: reviewItems.length });
+    if (reviewItems.length > 0) {
+      reviewItems.slice(0, 3).forEach((item, i) => {
+        const mins = 15 + i * 5;
+        const h = 9 + Math.floor((30 + i * 20) / 60);
+        const m = (30 + i * 20) % 60;
+        sched.push({ time: `${h}:${String(m).padStart(2,'0')}`, label: item.name, sub: item.subject });
+      });
+    }
+    sched.push({ time: '11:00', label: '🆕 新規学習', count: newItems.length });
+    newItems.slice(0, 3).forEach((item, i) => {
+      const h = 11 + Math.floor((30 + i * 25) / 60);
+      const m = (30 + i * 25) % 60;
+      sched.push({ time: `${h}:${String(m).padStart(2,'0')}`, label: item.name, sub: item.subject });
+    });
+    sched.push({ time: '14:00', label: '📝 ノート整理 + Notion打卡' });
+    sched.push({ time: '16:00', label: '🔧 弱点復習 + 自由学習' });
   } else {
-    sched.push({ time: '7:00', label: 'Anki + 通勤学習' });
-    sched.push({ time: '12:00', label: '昼休みAnki (15min)' });
-    const evSub = SUBS[(dow - 1) % SUBS.length];
-    sched.push({ time: '19:30', label: `${evSub.icon} ${evSub.key} 集中学習`, sub: evSub.key });
-    const topItem = d.dueToday.find(i => i.subject === evSub.key) || d.dueToday[0];
-    if (topItem) sched.push({ time: '20:00', label: topItem.name, sub: topItem.subject });
-    sched.push({ time: '20:30', label: '日本語学習 (30min)' });
-    sched.push({ time: '22:30', label: 'Notion打卡 + 振り返り' });
+    sched.push({ time: '7:00', label: '📖 通勤学習 (復習2-3題)' });
+    sched.push({ time: '12:00', label: '🔄 昼休み復習 (15min)' });
+    sched.push({ time: '19:30', label: '📚 集中学習タイム' });
+    if (plan.plan.length > 0) {
+      plan.plan.slice(0, 3).forEach((item, i) => {
+        const m = i * 20;
+        sched.push({ time: `${19 + Math.floor((50 + m) / 60)}:${String((50 + m) % 60).padStart(2,'0')}`, label: item.name, sub: item.subject });
+      });
+    }
+    sched.push({ time: '21:30', label: '📝 Notion打卡 + 振り返り' });
   }
 
   return `<div class="rec-card">
-    <div class="rec-title">🧠 今日の学習プラン (${isWE ? '週末' : '平日'})</div>
+    <div class="rec-title">🧠 今日のタイムライン (${isWE ? '週末' : '平日'})</div>
     ${sched.map(s => `<div class="rec-item">
       <span class="rec-time">${s.time}</span>
-      <span class="rec-label">${s.label}</span>
+      <span class="rec-label">${s.label}${s.count != null ? ` (${s.count}題)` : ''}</span>
       ${s.sub ? `<span class="qi-sub ${s.sub}" style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px">${s.sub}</span>` : ''}
     </div>`).join('')}
     <div style="margin-top:10px;font-size:10px;color:var(--text-muted);text-align:center">
-      ${d.dueToday.length}件の待復習 · 弱点: ${weakest.join(', ') || '—'}
+      合計${plan.totalCount || 0}題 · 推定${plan.estimatedMinutes || 0}分
     </div>
   </div>`;
 }
@@ -854,8 +1075,8 @@ function renderLogs(d) {
   const items = d.logs.slice(0, 10).map(l =>
     `<div class="log-item"><span class="log-date">${l.reviewDate || '—'}</span><span class="log-title">${l.title}</span><span class="log-time">${l.timeSpent}min ${l.mastery || ''}</span></div>`
   ).join('');
-  return `<div class="card"><div class="card-header"><div class="card-title"><span class="icon">📝</span> 復習記録</div></div>
-    <div class="card-body">${items || '<div class="empty">まだ記録がありません</div>'}</div></div>`;
+  return `<div class="card"><div class="card-header"><div class="card-title"><span class="icon">📝</span> 学習記録</div></div>
+    <div class="card-body">${items || '<div class="empty">まだ記録がありません。<br>学習を始めて記録を作りましょう！</div>'}</div></div>`;
 }
 
 // ===== Timer =====
@@ -885,20 +1106,22 @@ function updateTimerDisplay() {
   if (el) el.textContent = fmtTime(timer.seconds);
 }
 function selectItem(id) {
-  if (timer.completedItems.has(id)) return;
-  const item = DATA.dueToday.find(i => i.id === id);
+  if (isItemCompleted(id)) return;
+  const plan = DATA.dailyPlan?.plan || [];
+  const item = plan.find(i => i.id === id) || DATA.dueToday.find(i => i.id === id);
   if (item) { timer.selectedItem = item; if (item.subject) timer.subject = item.subject; renderApp(); }
 }
 function setFilter(f) { reviewFilter = f; renderApp(); }
 function quickComplete(id) {
-  const item = DATA.dueToday.find(i => i.id === id);
+  const plan = DATA.dailyPlan?.plan || [];
+  const item = plan.find(i => i.id === id) || DATA.dueToday.find(i => i.id === id);
   if (item) { timer.selectedItem = item; if (item.subject) timer.subject = item.subject; showModal(item, 0); }
 }
 
 // ===== Modal =====
 function showModal(item, minutes) {
   selectedMastery = null;
-  document.getElementById('modalItemName').textContent = `${item.subject} · ${item.name}`;
+  document.getElementById('modalItemName').textContent = `${item.subject ? item.subject + ' · ' : ''}${item.name}`;
   document.getElementById('modalNotes').value = '';
   document.querySelectorAll('.mbtn').forEach(b => b.classList.remove('selected'));
   document.getElementById('reviewModal').classList.add('show');
