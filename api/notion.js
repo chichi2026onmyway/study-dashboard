@@ -1,404 +1,365 @@
-const { Client } = require('@notionhq/client');
-
-const notion = new Client({ auth: process.env.NOTION_TOKEN });
-
+const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const DB_2026 = process.env.DB_2026;
 const DB_LOG = process.env.DB_LOG;
 const DB_CHECKIN = process.env.DB_CHECKIN;
+const EXAM_DATE = "2026-08-01";
 
-// ---------- helpers ----------
+const WEEKDAY_SUBJECTS = {
+  0: ["CS"], 1: ["CS"], 2: ["AI"], 3: ["HCI"],
+  4: ["SE"], 5: ["CS"], 6: ["IR", "CS"],
+};
+const DAILY_LIMIT_WEEKDAY = 3;
+const DAILY_LIMIT_WEEKEND = 5;
+const PRIORITY_ORDER = {
+  "\ud83d\udd34 S 必须掌握": 0, "\ud83d\udfe0 A 重要": 1,
+  "\ud83d\udfe1 B 建议学": 2, "\ud83d\udfe2 C 了解即可": 3,
+};
+
 function todayJST() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  return new Date(Date.now() + 9 * 3600000).toISOString().split("T")[0];
 }
-function dateStrJST() {
-  const d = todayJST();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function getDowJST() {
+  return new Date(Date.now() + 9 * 3600000).getUTCDay();
+}
+function daysUntilExam() {
+  return Math.ceil((new Date(EXAM_DATE) - new Date(todayJST())) / 86400000);
 }
 
-// Paginate through all results (up to 1000)
-async function queryAll(dbId, filter, sorts) {
-  let results = [];
-  let cursor = undefined;
-  let pages = 0;
-  do {
-    const resp = await notion.databases.query({
-      database_id: dbId,
-      filter: filter || undefined,
-      sorts: sorts || undefined,
-      start_cursor: cursor,
-      page_size: 100
+async function notionFetch(endpoint, body, method) {
+  const res = await fetch("https://api.notion.com/v1" + endpoint, {
+    method: method || (body ? "POST" : "GET"),
+    headers: {
+      Authorization: "Bearer " + NOTION_TOKEN,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res.json();
+}
+
+async function fetchAllItems() {
+  const items = [];
+  let cursor;
+  for (let i = 0; i < 10; i++) {
+    const r = await notionFetch("/databases/" + DB_2026 + "/query", {
+      start_cursor: cursor, page_size: 100,
     });
-    results = results.concat(resp.results);
-    cursor = resp.has_more ? resp.next_cursor : undefined;
-    pages++;
-  } while (cursor && pages < 10); // max 1000
-  return results;
+    if (!r.results) break;
+    items.push(...r.results);
+    if (!r.has_more) break;
+    cursor = r.next_cursor;
+  }
+  return items;
 }
 
-// ---------- parse helpers ----------
-function parseStudyItem(p) {
-  const props = p.properties;
+function hasBeenStudied(props) {
+  return (props["Review Count"]?.rollup?.number || 0) > 0
+    || !!props["Last Reviewed"]?.rollup?.date?.start;
+}
+
+function extractItem(item) {
+  const p = item.properties;
   return {
-    id: p.id,
-    name: props.Name?.title?.[0]?.plain_text || '',
-    subject: props.Subject?.select?.name || '',
-    type: props.Type?.select?.name || '',
-    mastery: props.Mastery?.select?.name || '',
-    priority: props.Priority?.select?.name || '',
-    chapter: props.Chapter?.select?.name || '',
-    year: props.Year?.select?.name || '',
-    difficulty: props.Difficulty?.select?.name || '',
-    redoDate: props['Redo Date']?.date?.start || '',
-    note: props.Note?.rich_text?.[0]?.plain_text || '',
-    relatedKnowledge: props['Related Knowledge']?.rich_text?.[0]?.plain_text || '',
-    timeSpent: props['Time Spent']?.number || 0,
-    num: props.Num?.rich_text?.[0]?.plain_text || '',
+    id: item.id,
+    name: p.Name?.title?.[0]?.plain_text || "Untitled",
+    subject: p.Subject?.select?.name || "",
+    mastery: p.Mastery?.select?.name || "",
+    type: p.Type?.select?.name || "",
+    priority: p.Priority?.select?.name || "",
+    url: item.url,
+    isReview: hasBeenStudied(p),
   };
 }
 
-function parseLog(p) {
-  const props = p.properties;
-  return {
-    id: p.id,
-    title: props.Title?.title?.[0]?.plain_text || '',
-    subject: props.Subject?.rollup?.array?.[0]?.select?.name || '',
-    mastery: props.Mastery?.select?.name || '',
-    method: props.Method?.select?.name || '',
-    timeSpent: props['Time Spent (min)']?.number || 0,
-    reviewDate: props['Review Date']?.date?.start || '',
-    startTime: props['Start Time']?.date?.start || '',
-    endTime: props['End Time']?.date?.start || '',
-    notes: props.Notes?.rich_text?.[0]?.plain_text || '',
-    studyItemIds: (props['Study Item']?.relation || []).map(r => r.id),
-  };
+function buildSummary(items) {
+  const bySubject = {};
+  let totalGreen = 0, totalReviewed = 0;
+  for (const item of items) {
+    const p = item.properties;
+    const s = p.Subject?.select?.name || "Unknown";
+    const m = p.Mastery?.select?.name || "";
+    if (!bySubject[s]) bySubject[s] = { total:0,green:0,yellow:0,red:0,none:0,reviewed:0 };
+    bySubject[s].total++;
+    if (hasBeenStudied(p)) { bySubject[s].reviewed++; totalReviewed++; }
+    if (m==="\ud83d\udfe2") { bySubject[s].green++; totalGreen++; }
+    else if (m==="\ud83d\udfe1") bySubject[s].yellow++;
+    else if (m==="\ud83d\udd34") bySubject[s].red++;
+    else bySubject[s].none++;
+  }
+  return { totalItems:items.length, totalGreen, totalReviewed, bySubject, daysUntilExam:daysUntilExam() };
 }
 
-function parseCheckin(p) {
-  const props = p.properties;
-  return {
-    id: p.id,
-    name: props.Name?.title?.[0]?.plain_text || '',
-    date: props.Date?.date?.start || '',
-    minutes: props.Minutes?.number || 0,
-    phase: props.Phase?.select?.name || '',
-    mood: props.Mood?.select?.name || '',
-    satisfaction: props.Satisfaction?.select?.name || '',
-    dayType: props['Day Type']?.select?.name || '',
-    whatIDid: props['What I Did']?.rich_text?.[0]?.plain_text || '',
-    pomodoros: props.Pomodoros?.number || 0,
-    cs: props.CS?.checkbox || false,
-    ai: props.AI?.checkbox || false,
-    hci: props.HCI?.checkbox || false,
-    se: props.SE?.checkbox || false,
-    ir: props.IR?.checkbox || false,
-    earlyRise: props['早起']?.checkbox || false,
-    earlySleep: props['早睡']?.checkbox || false,
-    exercise: props['运动']?.checkbox || false,
-    reading: props['阅读']?.checkbox || false,
-    meditation: props['冥想']?.checkbox || false,
-    noTakeout: props['不点外卖']?.checkbox || false,
-  };
+function filterDueItems(items, todayStr) {
+  return items
+    .filter(item => {
+      const p = item.properties;
+      if (p.Mastery?.select?.name === "\ud83d\udfe2") return false;
+      const rd = p["Redo Date"]?.date?.start;
+      const ar = p["Auto Redo"]?.formula?.date?.start?.split("T")[0];
+      const eff = rd || ar;
+      if (!eff) return false;
+      return eff <= todayStr;
+    })
+    .map(extractItem)
+    .sort((a,b) => (PRIORITY_ORDER[a.priority]??4) - (PRIORITY_ORDER[b.priority]??4))
+    .slice(0, 20);
 }
 
-// ---------- API handlers ----------
-async function getAll() {
-  const today = dateStrJST();
+// ===== 自动排题 =====
+async function assignDaily() {
+  const todayStr = todayJST();
+  const dow = getDowJST();
+  const subjects = WEEKDAY_SUBJECTS[dow] || ["CS"];
+  const isWE = dow === 0 || dow === 6;
+  const limit = isWE ? DAILY_LIMIT_WEEKEND : DAILY_LIMIT_WEEKDAY;
+  const items = await fetchAllItems();
 
-  const [items, logs, checkins] = await Promise.all([
-    queryAll(DB_2026),
-    queryAll(DB_LOG, undefined, [{ property: 'Review Date', direction: 'descending' }]),
-    queryAll(DB_CHECKIN, undefined, [{ property: 'Date', direction: 'descending' }]),
-  ]);
+  const alreadyDue = filterDueItems(items, todayStr);
+  const dueIds = new Set(alreadyDue.map(i => i.id));
 
-  const parsedItems = items.map(parseStudyItem);
-  const parsedLogs = logs.map(parseLog).filter(l => {
-    // Only include logs with actual review activity
-    if (!l.reviewDate) return false;
-    if (l.reviewDate > today) return false;
-    return true;
-  });
-  const parsedCheckins = checkins.map(parseCheckin).filter(c => {
-    // Filter out fake/future data
-    if (!c.date) return false;
-    if (c.date > today) return false;
-    if (c.minutes <= 0 && !c.cs && !c.ai && !c.hci && !c.se && !c.ir) return false;
+  const candidates = items.filter(item => {
+    const p = item.properties;
+    if (dueIds.has(item.id)) return false;
+    if (p.Mastery?.select?.name === "\ud83d\udfe2") return false;
+    if (!subjects.includes(p.Subject?.select?.name)) return false;
+    if (hasBeenStudied(p)) return false;
+    if (p["Redo Date"]?.date?.start) return false;
     return true;
   });
 
-  // --- Mastery stats (only count items that have actually been studied) ---
-  // Items with mastery AND (has a log OR has timeSpent > 0 OR has a redoDate) are "studied"
-  // Items with no mastery are "not studied yet" (don't count 🔴 as studied if it was pre-set)
-  const itemsWithLogs = new Set();
-  parsedLogs.forEach(l => l.studyItemIds.forEach(id => itemsWithLogs.add(id)));
-
-  const masteryStats = { total: parsedItems.length, green: 0, yellow: 0, red: 0, notStudied: 0 };
-  const subjectStats = {};
-
-  parsedItems.forEach(item => {
-    if (!subjectStats[item.subject]) {
-      subjectStats[item.subject] = { total: 0, green: 0, yellow: 0, red: 0, notStudied: 0 };
-    }
-    subjectStats[item.subject].total++;
-
-    const hasBeenStudied = itemsWithLogs.has(item.id) || item.timeSpent > 0 || (item.redoDate && item.redoDate <= today);
-
-    if (item.mastery === '🟢' && hasBeenStudied) {
-      masteryStats.green++;
-      subjectStats[item.subject].green++;
-    } else if (item.mastery === '🟡' && hasBeenStudied) {
-      masteryStats.yellow++;
-      subjectStats[item.subject].yellow++;
-    } else if (item.mastery === '🔴' && hasBeenStudied) {
-      masteryStats.red++;
-      subjectStats[item.subject].red++;
-    } else {
-      masteryStats.notStudied++;
-      subjectStats[item.subject].notStudied++;
-    }
-  });
-
-  // --- Due today (only items with redo date <= today, not empty dates) ---
-  const dueToday = parsedItems.filter(item => {
-    if (!item.redoDate) return false;
-    return item.redoDate <= today;
-  }).sort((a, b) => {
-    // Priority sort: S > A > B > C > empty
-    const pOrder = { '🔴 S 必须掌握': 0, '🟠 A 重要': 1, '🟡 B 建议学': 2, '🟢 C 了解即可': 3 };
-    const pa = pOrder[a.priority] ?? 4;
-    const pb = pOrder[b.priority] ?? 4;
+  candidates.sort((a,b) => {
+    const pa = PRIORITY_ORDER[a.properties.Priority?.select?.name] ?? 4;
+    const pb = PRIORITY_ORDER[b.properties.Priority?.select?.name] ?? 4;
     if (pa !== pb) return pa - pb;
-    // Then by mastery: 🔴 > 🟡 > 🟢
-    const mOrder = { '🔴': 0, '🟡': 1, '🟢': 2 };
-    return (mOrder[a.mastery] ?? 3) - (mOrder[b.mastery] ?? 3);
+    const ta = a.properties.Type?.select?.name === "知识点" ? 0 : 1;
+    const tb = b.properties.Type?.select?.name === "知识点" ? 0 : 1;
+    return ta - tb;
   });
 
-  // --- Phase progress ---
-  const phaseItems = {};
-  parsedCheckins.forEach(c => {
-    if (c.phase && !phaseItems[c.phase]) {
-      phaseItems[c.phase] = { count: 0, totalMinutes: 0 };
-    }
-    if (c.phase) {
-      phaseItems[c.phase].count++;
-      phaseItems[c.phase].totalMinutes += c.minutes;
-    }
-  });
+  const needed = Math.max(0, limit - alreadyDue.length);
+  const toAssign = candidates.slice(0, needed);
+  const assigned = [];
 
-  // --- Streak calculation (real data only) ---
-  const studyDates = new Set();
-  parsedCheckins.forEach(c => {
-    if (c.minutes > 0) studyDates.add(c.date);
-  });
-  parsedLogs.forEach(l => {
-    if (l.timeSpent > 0) studyDates.add(l.reviewDate);
-  });
-
-  let streak = 0;
-  const d = todayJST();
-  // Check if studied today
-  if (studyDates.has(today)) {
-    streak = 1;
-    d.setDate(d.getDate() - 1);
-  }
-  while (true) {
-    const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    if (studyDates.has(ds)) {
-      streak++;
-      d.setDate(d.getDate() - 1);
-    } else {
-      break;
+  for (const item of toAssign) {
+    try {
+      await notionFetch("/pages/" + item.id, {
+        properties: { "Redo Date": { date: { start: todayStr } } },
+      }, "PATCH");
+      assigned.push(extractItem(item));
+    } catch (e) {
+      console.error("assign fail:", item.id, e.message);
     }
   }
-
-  // --- Total hours ---
-  let totalMinutes = 0;
-  parsedCheckins.forEach(c => { totalMinutes += c.minutes; });
-  parsedLogs.forEach(l => { totalMinutes += l.timeSpent; });
-
-  // --- Countdown ---
-  const examDate = new Date('2026-08-01T00:00:00+09:00');
-  const nowJST = todayJST();
-  const daysLeft = Math.ceil((examDate - nowJST) / (1000 * 60 * 60 * 24));
-
-  // --- Heatmap data (last 6 months) ---
-  const heatmap = {};
-  parsedCheckins.forEach(c => {
-    if (c.date && c.minutes > 0) {
-      heatmap[c.date] = (heatmap[c.date] || 0) + c.minutes;
-    }
-  });
-  parsedLogs.forEach(l => {
-    if (l.reviewDate && l.timeSpent > 0) {
-      heatmap[l.reviewDate] = (heatmap[l.reviewDate] || 0) + l.timeSpent;
-    }
-  });
 
   return {
-    items: parsedItems,
-    logs: parsedLogs.slice(0, 20),
-    checkins: parsedCheckins.slice(0, 60),
-    masteryStats,
-    subjectStats,
-    dueToday,
-    phaseItems,
-    streak,
-    totalHours: Math.round(totalMinutes / 60 * 10) / 10,
-    daysLeft,
-    today,
-    heatmap,
-    studyDates: Array.from(studyDates),
+    today: todayStr,
+    dayOfWeek: ["日","月","火","水","木","金","土"][dow],
+    subjects, limit,
+    alreadyDueCount: alreadyDue.length,
+    newlyAssigned: assigned.length,
+    totalForToday: alreadyDue.length + assigned.length,
+    assigned,
   };
 }
 
-// Create a review log and optionally update the study item
-async function completeReview({ studyItemId, studyItemName, subject, timeSpent, mastery, method, notes, startTime, endTime }) {
-  const today = dateStrJST();
-
-  // 1. Create review log entry
-  const logProps = {
-    Title: { title: [{ text: { content: studyItemName || `Review ${today}` } }] },
-    'Review Date': { date: { start: today } },
-    'Time Spent (min)': { number: timeSpent || 0 },
-  };
-
-  if (mastery) {
-    logProps.Mastery = { select: { name: mastery } };
+// ===== 完成复习 =====
+async function completeReview(data) {
+  const { pageId, mastery } = data;
+  if (!pageId || !mastery) return { success:false, error:"Missing pageId or mastery" };
+  const todayStr = todayJST();
+  const intervals = { "\ud83d\udd34":1, "\ud83d\udfe1":3, "\ud83d\udfe2":0 };
+  const days = intervals[mastery] ?? 3;
+  const updates = { Mastery: { select: { name: mastery } } };
+  if (mastery === "\ud83d\udfe2") {
+    updates["Redo Date"] = { date: null };
+  } else {
+    const nd = new Date(todayStr);
+    nd.setDate(nd.getDate() + days);
+    updates["Redo Date"] = { date: { start: nd.toISOString().split("T")[0] } };
   }
-  if (method) {
-    logProps.Method = { select: { name: method } };
-  }
-  if (notes) {
-    logProps.Notes = { rich_text: [{ text: { content: notes } }] };
-  }
-  if (startTime) {
-    logProps['Start Time'] = { date: { start: startTime } };
-  }
-  if (endTime) {
-    logProps['End Time'] = { date: { start: endTime } };
-  }
-  if (studyItemId) {
-    logProps['Study Item'] = { relation: [{ id: studyItemId }] };
-  }
-
-  const logPage = await notion.pages.create({
-    parent: { database_id: DB_LOG },
-    properties: logProps,
-  });
-
-  // 2. Update the study item's mastery & redo date if provided
-  if (studyItemId) {
-    const updateProps = {};
-
-    if (mastery) {
-      // Map log mastery to item mastery
-      const masteryMap = {
-        '🟢 掌握': '🟢',
-        '🟡 半熟': '🟡',
-        '🔴 不会': '🔴',
-      };
-      if (masteryMap[mastery]) {
-        updateProps.Mastery = { select: { name: masteryMap[mastery] } };
-      }
-    }
-
-    // Calculate next redo date based on mastery (spaced repetition)
-    const nextDate = new Date(todayJST());
-    if (mastery === '🟢 掌握') {
-      nextDate.setDate(nextDate.getDate() + 14); // 2 weeks
-    } else if (mastery === '🟡 半熟') {
-      nextDate.setDate(nextDate.getDate() + 3); // 3 days
-    } else {
-      nextDate.setDate(nextDate.getDate() + 1); // tomorrow
-    }
-    const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
-    updateProps['Redo Date'] = { date: { start: nextDateStr } };
-
-    if (Object.keys(updateProps).length > 0) {
-      await notion.pages.update({
-        page_id: studyItemId,
-        properties: updateProps,
-      });
-    }
-  }
-
-  // 3. Update or create today's checkin
   try {
-    const existingCheckins = await notion.databases.query({
-      database_id: DB_CHECKIN,
-      filter: {
-        property: 'Date',
-        date: { equals: today }
-      }
-    });
-
-    if (existingCheckins.results.length > 0) {
-      const existing = existingCheckins.results[0];
-      const currentMin = existing.properties.Minutes?.number || 0;
-      const updateP = {
-        Minutes: { number: currentMin + (timeSpent || 0) },
-      };
-      // Set subject checkbox
-      if (subject) {
-        const subjectMap = { CS: 'CS', AI: 'AI', HCI: 'HCI', SE: 'SE', IR: 'IR' };
-        if (subjectMap[subject]) {
-          updateP[subjectMap[subject]] = { checkbox: true };
-        }
-      }
-      await notion.pages.update({
-        page_id: existing.id,
-        properties: updateP,
-      });
-    } else {
-      const newP = {
-        Name: { title: [{ text: { content: `Day ${today}` } }] },
-        Date: { date: { start: today } },
-        Minutes: { number: timeSpent || 0 },
-        Phase: { select: { name: 'Phase 1 基础' } },
-        'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } },
-      };
-      if (subject) {
-        const subjectMap = { CS: 'CS', AI: 'AI', HCI: 'HCI', SE: 'SE', IR: 'IR' };
-        if (subjectMap[subject]) {
-          newP[subjectMap[subject]] = { checkbox: true };
-        }
-      }
-      await notion.pages.create({
-        parent: { database_id: DB_CHECKIN },
-        properties: newP,
-      });
-    }
+    await notionFetch("/pages/" + pageId, { properties: updates }, "PATCH");
+    return { success:true, mastery, nextRedoDate: updates["Redo Date"]?.date?.start || null };
   } catch (e) {
-    console.error('Checkin update error:', e.message);
+    return { success:false, error:e.message };
   }
-
-  return { success: true, logId: logPage.id };
 }
 
-// ---------- Vercel handler ----------
-module.exports = async (req, res) => {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+// ===== ICS 日历生成 (方案2: 订阅源) =====
+async function generateICS() {
+  const todayStr = todayJST();
+  const dow = getDowJST();
+  const isWE = dow===0||dow===6;
+  const startH = isWE ? 9 : 19;
+  const slotM = isWE ? 25 : 15;
+  const items = await fetchAllItems();
+  const due = filterDueItems(items, todayStr);
+  const iconMap = {CS:"CS",AI:"AI",HCI:"HCI",SE:"SE",IR:"IR"};
 
-  try {
-    const { action } = req.query;
-
-    if (action === 'getAll') {
-      const data = await getAll();
-      return res.status(200).json(data);
-    }
-
-    if (action === 'complete-review' && req.method === 'POST') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const result = await completeReview(body);
-      return res.status(200).json(result);
-    }
-
-    return res.status(400).json({ error: 'Unknown action. Use ?action=getAll or ?action=complete-review' });
-  } catch (err) {
-    console.error('API Error:', err);
-    return res.status(500).json({ error: err.message });
+  function evt(item, dateStr, sh, idx, sm) {
+    const h1=sh+Math.floor(idx*sm/60), m1=(idx*sm)%60;
+    const h2=sh+Math.floor((idx+1)*sm/60), m2=((idx+1)*sm)%60;
+    const ds=dateStr.replace(/-/g,"");
+    const pad=n=>String(n).padStart(2,"0");
+    return "BEGIN:VEVENT\r\n"
+      +"DTSTART;TZID=Asia/Tokyo:"+ds+"T"+pad(h1)+pad(m1)+"00\r\n"
+      +"DTEND;TZID=Asia/Tokyo:"+ds+"T"+pad(h2)+pad(m2)+"00\r\n"
+      +"SUMMARY:"+item.subject+": "+item.name+"\r\n"
+      +"DESCRIPTION:Priority: "+item.priority+"\\nType: "+item.type+"\r\n"
+      +"UID:study-"+item.id+"-"+dateStr+"@dashboard\r\n"
+      +"STATUS:CONFIRMED\r\n"
+      +"BEGIN:VALARM\r\nTRIGGER:-PT5M\r\nACTION:DISPLAY\r\nDESCRIPTION:Study time\r\nEND:VALARM\r\n"
+      +"END:VEVENT";
   }
+
+  const events = due.map((item,i)=>evt(item,todayStr,startH,i,slotM));
+
+  // 未来7天到期的
+  for (let d=1; d<=7; d++) {
+    const fd = new Date(todayStr);
+    fd.setDate(fd.getDate()+d);
+    const fs = fd.toISOString().split("T")[0];
+    const fDow = fd.getDay();
+    const fWE = fDow===0||fDow===6;
+    const fSH = fWE?9:19, fSM = fWE?25:15;
+    const fDue = items.filter(item => {
+      const rd = item.properties["Redo Date"]?.date?.start;
+      return rd === fs && item.properties.Mastery?.select?.name !== "\ud83d\udfe2";
+    }).map(extractItem).slice(0,8);
+    fDue.forEach((item,i) => events.push(evt(item,fs,fSH,i,fSM)));
+  }
+
+  return "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//StudyDashboard//EN\r\n"
+    +"CALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n"
+    +"X-WR-CALNAME:京大社情 Study Plan\r\nX-WR-TIMEZONE:Asia/Tokyo\r\n"
+    +events.join("\r\n")+"\r\nEND:VCALENDAR";
+}
+
+async function getRecentLogs() {
+  if (!DB_LOG) return { logs:[] };
+  const r = await notionFetch("/databases/"+DB_LOG+"/query", {
+    sorts:[{property:"Review Date",direction:"descending"}], page_size:50,
+  });
+  return { logs: (r.results||[]).map(item => {
+    const p = item.properties;
+    const title = p.Title?.title?.[0]?.plain_text||"";
+    const mins = p["Duration (min)"]?.formula?.number || p["Time Spent (min)"]?.number || 0;
+    let subj = p.Subject?.rollup?.array?.[0]?.select?.name||"";
+    if(!subj){for(const s of["CS","AI","HCI","SE","IR"]){if(title.toUpperCase().includes(s)){subj=s;break;}}}
+    return { title, date:(p["Review Date"]?.date?.start||"").split("T")[0], minutes:Math.round(mins), subject:subj, mastery:p.Mastery?.select?.name||"", method:p.Method?.select?.name||"" };
+  })};
+}
+
+async function getCheckins() {
+  if (!DB_CHECKIN) return { checkins:[] };
+  const todayStr = todayJST();
+  const all=[];
+  let cursor;
+  for(let i=0;i<3;i++){
+    const r=await notionFetch("/databases/"+DB_CHECKIN+"/query",{sorts:[{property:"Date",direction:"descending"}],page_size:100,start_cursor:cursor});
+    if(!r.results)break; all.push(...r.results); if(!r.has_more)break; cursor=r.next_cursor;
+  }
+  return { checkins: all.map(item=>{
+    const p=item.properties;
+    return{date:p.Date?.date?.start||"",minutes:p.Minutes?.number||0,mood:p.Mood?.select?.name||"",cs:p.CS?.checkbox||false,ai:p.AI?.checkbox||false,hci:p.HCI?.checkbox||false,se:p.SE?.checkbox||false,ir:p.IR?.checkbox||false};
+  }).filter(c=>c.date<=todayStr&&c.minutes>0)};
+}
+
+async function createLog(data) {
+  if(!DB_LOG) return{success:false,error:"DB_LOG not set"};
+  const props = {
+    Title:{title:[{text:{content:data.title||"复习记录"}}]},
+    "Review Date":{date:{start:data.date}},
+  };
+  if(data.method) props.Method={select:{name:data.method}};
+  if(data.minutes) props["Time Spent (min)"]={number:data.minutes};
+  if(data.startTime) props["Start Time"]={date:{start:data.startTime}};
+  if(data.endTime) props["End Time"]={date:{start:data.endTime}};
+  try{
+    const r=await notionFetch("/pages",{parent:{database_id:DB_LOG},properties:props});
+    return{success:!!r.id,id:r.id,url:r.url};
+  }catch(e){return{success:false,error:e.message};}
+}
+
+async function createCheckin(data) {
+  if(!DB_CHECKIN) return{success:false,error:"DB_CHECKIN not set"};
+  const props = {
+    Name:{title:[{text:{content:data.name||data.date+" 打卡"}}]},
+    Date:{date:{start:data.date}},
+  };
+  if(data.minutes!=null) props.Minutes={number:data.minutes};
+  if(data.mood) props.Mood={select:{name:data.mood}};
+  if(data.cs) props.CS={checkbox:true};
+  if(data.ai) props.AI={checkbox:true};
+  if(data.hci) props.HCI={checkbox:true};
+  if(data.se) props.SE={checkbox:true};
+  if(data.ir) props.IR={checkbox:true};
+  try{
+    const r=await notionFetch("/pages",{parent:{database_id:DB_CHECKIN},properties:props});
+    return{success:!!r.id};
+  }catch(e){return{success:false,error:e.message};}
+}
+
+async function getAll() {
+  const items = await fetchAllItems();
+  const todayStr = todayJST();
+  const [logsRes,checkinsRes] = await Promise.all([getRecentLogs(),getCheckins()]);
+  return {
+    summary: buildSummary(items),
+    dueItems: filterDueItems(items, todayStr),
+    logs: logsRes.logs,
+    checkins: checkinsRes.checkins,
+  };
+}
+
+async function exportAnki(subject) {
+  const all=[];let cursor;
+  const filter=subject?{property:"Subject",select:{equals:subject}}:undefined;
+  for(let i=0;i<10;i++){
+    const r=await notionFetch("/databases/"+DB_2026+"/query",{start_cursor:cursor,page_size:100,filter});
+    if(!r?.results)break;
+    for(const pg of r.results){
+      const p=pg.properties;
+      const nm=p.Name?.title?.map(t=>t.plain_text).join("")||"";
+      const nt=p.Note?.rich_text?.map(t=>t.plain_text).join("")||"";
+      if(nm) all.push({front:nm,back:nt||"(no note)",tags:[p.Subject?.select?.name,p.Chapter?.select?.name,p.Type?.select?.name,p.Mastery?.select?.name].filter(Boolean).join(" ")});
+    }
+    if(!r.has_more)break; cursor=r.next_cursor;
+  }
+  return{count:all.length,data:all.map(i=>i.front+"\t"+i.back+"\t"+i.tags).join("\n")};
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin","*");
+  res.setHeader("Access-Control-Allow-Methods","GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers","Content-Type");
+  if(req.method==="OPTIONS") return res.status(200).end();
+  if(!NOTION_TOKEN) return res.status(500).json({error:"NOTION_TOKEN not set"});
+
+  try{
+    switch(req.query.action){
+      case "ping": return res.json({ok:true});
+      case "all": return res.json(await getAll());
+      case "study-summary": return res.json(buildSummary(await fetchAllItems()));
+      case "due-today": return res.json({items:filterDueItems(await fetchAllItems(),todayJST())});
+      case "assign-daily": return res.json(await assignDaily());
+      case "complete-review": return res.json(await completeReview(req.body));
+      case "daily-ics":
+        const ics=await generateICS();
+        res.setHeader("Content-Type","text/calendar;charset=utf-8");
+        res.setHeader("Content-Disposition",'attachment;filename="study-plan.ics"');
+        return res.send(ics);
+      case "recent-logs": return res.json(await getRecentLogs());
+      case "checkins": return res.json(await getCheckins());
+      case "create-log": return res.json(await createLog(req.body));
+      case "create-checkin": return res.json(await createCheckin(req.body));
+      case "anki-export":
+        const s=req.query.subject||null;
+        const d=await exportAnki(s);
+        if(req.query.download==="1"){res.setHeader("Content-Type","text/tab-separated-values;charset=utf-8");return res.send(d.data);}
+        return res.json(d);
+      default: return res.status(400).json({error:"Unknown action"});
+    }
+  }catch(e){return res.status(500).json({error:e.message});
 };
