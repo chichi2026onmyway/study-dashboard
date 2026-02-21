@@ -1,5 +1,8 @@
 {
   "name": "study-dashboard",
   "version": "2.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@notionhq/client": "^2.2.3"
+  }
 }
