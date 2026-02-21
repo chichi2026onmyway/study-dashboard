@@ -1,34 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>京大社情 Study Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;600;700;800&family=Noto+Sans+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#f5f4f0; font-family:'Noto Sans JP','Noto Sans SC',-apple-system,sans-serif; }
-.due-row { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; background:#f8f8f5; margin-bottom:6px; border-left:3px solid #ccc; }
-.due-info { flex:1; min-width:0; }
-.due-info strong { display:block; font-size:13px; color:#333; }
-.due-info small { font-size:11px; color:#999; }
-.tag-new { font-size:10px; padding:1px 5px; border-radius:4px; background:#E3F2FD; color:#1565C0; margin-right:4px; }
-.tag-review { font-size:10px; padding:1px 5px; border-radius:4px; background:#FFF3E0; color:#E65100; margin-right:4px; }
-.mastery-btns { display:flex; gap:3px; flex-shrink:0; }
-.mastery-btns button { background:none; border:1px solid #ddd; border-radius:6px; padding:3px 6px; font-size:14px; cursor:pointer; transition:transform .15s; }
-.mastery-btns button:hover { transform:scale(1.15); }
-.mastery-btns button:disabled { opacity:.4; cursor:not-allowed; }
-.gcal-box { text-align:center; margin-top:8px; }
-.gcal-btn { display:inline-block; padding:8px 18px; background:#1a73e8; color:#fff; border-radius:8px; font-size:12px; font-weight:600; text-decoration:none; }
-.gcal-box small { display:block; font-size:10px; color:#aaa; margin-top:4px; }
-</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
 // ─── 配置 ───
@@ -45,7 +14,7 @@ const PHASES = [
   { name:"Phase 1: 基础扫盲", start:"2026-02-19", end:"2026-04-15", desc:"通读教材+S级知识点", color:"#3B7DD8" },
   { name:"Phase 2: 过去问攻略", start:"2026-04-16", end:"2026-06-15", desc:"全部过去问至少做一遍", color:"#43A047" },
   { name:"Phase 3: 弱点强化", start:"2026-06-16", end:"2026-07-20", desc:"🔴🟡重做+模拟练习", color:"#E64A19" },
-  { name:"Phase 4: 冲刺",    start:"2026-07-21", end:"2026-08-10", desc:"限时模拟+最终回顾", color:"#D81B60" },
+  { name:"Phase 4: 冲刺",     start:"2026-07-21", end:"2026-08-10", desc:"限时模拟+最终回顾", color:"#D81B60" },
 ];
 
 const today = () => new Date().toISOString().split("T")[0];
@@ -78,18 +47,18 @@ function Dots() {
 }
 function Card({ title, children }) {
   return (
-    <div style=background:"#fff",borderRadius:16,padding:"20px 22px",border:"1px solid #e8e6e0">
-      <div style=fontSize:12,color:"#999",letterSpacing:1.5,fontFamily:"monospace",textTransform:"uppercase",marginBottom:14>{title}</div>
+    <div style={{ background: "#fff", borderRadius: 16, padding: "20px 22px", border: "1px solid #e8e6e0" }}>
+      <div style={{ fontSize: 12, color: "#999", letterSpacing: 1.5, fontFamily: "monospace", textTransform: "uppercase", marginBottom: 14 }}>{title}</div>
       {children}
     </div>
   );
 }
 function Stat({ label, value, sub }) {
   return (
-    <div style=textAlign:"center",padding:"10px 6px",background:"#f8f8f5",borderRadius:9>
-      <div style=fontSize:10,color:"#999">{label}</div>
-      <div style=fontSize:18,fontWeight:700,color:"#1a1a2e">{value}</div>
-      <div style=fontSize:9,color:"#aaa">{sub}</div>
+    <div style={{ textAlign: "center", padding: "10px 6px", background: "#f8f8f5", borderRadius: 9 }}>
+      <div style={{ fontSize: 10, color: "#999" }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e" }}>{value}</div>
+      <div style={{ fontSize: 9, color: "#aaa" }}>{sub}</div>
     </div>
   );
 }
@@ -99,18 +68,18 @@ function Countdown({ phase, assignInfo }) {
   const d = daysLeft();
   const urg = d<=30?"#C62828":d<=90?"#E65100":"#1a1a2e";
   return (
-    <div style={{background:`linear-gradient(135deg,${urg},${urg}dd)`,borderRadius:18,padding:"18px 24px",color:"#fff",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+    <div style={{ background: `linear-gradient(135deg,${urg},${urg}dd)`, borderRadius: 18, padding: "18px 24px", color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <div>
-        <div style=fontSize:11,opacity:.65,letterSpacing:2,fontFamily:"monospace",textTransform:"uppercase">京都大学 社会情報学 2026.8 入試</div>
-        <div style=fontSize:12,opacity:.45,marginTop:4>{phase?.name} — {phase?.desc}</div>
-        {assignInfo && <div style=fontSize:11,opacity:.7,marginTop:4>
+        <div style={{ fontSize: 11, opacity: .65, letterSpacing: 2, fontFamily: "monospace", textTransform: "uppercase" }}>京都大学 社会情報学 2026.8 入試</div>
+        <div style={{ fontSize: 12, opacity: .45, marginTop: 4 }}>{phase?.name} — {phase?.desc}</div>
+        {assignInfo && <div style={{ fontSize: 11, opacity: .7, marginTop: 4 }}>
           📅 今日({assignInfo.dayOfWeek}): {assignInfo.subjects?.join("+")} · 待学{assignInfo.totalForToday}题
           {assignInfo.newlyAssigned > 0 && " · 🆕新分配" + assignInfo.newlyAssigned + "题"}
         </div>}
       </div>
-      <div style=textAlign:"right">
-        <div style=fontSize:44,fontWeight:800,fontFamily:"monospace",lineHeight:1>{d}</div>
-        <div style=fontSize:11,opacity:.6>days left</div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ fontSize: 44, fontWeight: 800, fontFamily: "monospace", lineHeight: 1 }}>{d}</div>
+        <div style={{ fontSize: 11, opacity: .6 }}>days left</div>
       </div>
     </div>
   );
@@ -149,30 +118,30 @@ function Timer({ onLog }) {
   const pct = Math.min((sec/(45*60))*100, 100);
 
   return (
-    <div style=background:"linear-gradient(135deg,#13111a 0%,#1a1833 50%,#0d1b3e 100%)",borderRadius:18,padding:"24px 26px",color:"#fff",position:"relative",overflow:"hidden">
-      <div style=position:"absolute",top:0,left:0,right:0,height:3,background:"#222">
-        <div style={{height:"100%",width:`${pct}%`,background:sub?.color,transition:"width 1s linear",borderRadius:"18px 0 0 0"}} />
+    <div style={{ background: "linear-gradient(135deg,#13111a 0%,#1a1833 50%,#0d1b3e 100%)", borderRadius: 18, padding: "24px 26px", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "#222" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: sub?.color, transition: "width 1s linear", borderRadius: "18px 0 0 0" }} />
       </div>
-      <div style=display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14>
-        <span style=fontSize:11,color:"#6b7094",letterSpacing:2,fontFamily:"monospace",textTransform:"uppercase">⏱ Study Timer</span>
-        <span style=fontSize:11,color:"#4a5072",background:"rgba(255,255,255,.04)",borderRadius:8,padding:"3px 10px">目标 45min</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <span style={{ fontSize: 11, color: "#6b7094", letterSpacing: 2, fontFamily: "monospace", textTransform: "uppercase" }}>⏱ Study Timer</span>
+        <span style={{ fontSize: 11, color: "#4a5072", background: "rgba(255,255,255,.04)", borderRadius: 8, padding: "3px 10px" }}>目标 45min</span>
       </div>
-      <div style={{fontSize:56,fontFamily:"monospace",fontWeight:200,textAlign:"center",letterSpacing:6,color:run?"#e6f1ff":"#4a5072",textShadow:run?`0 0 60px ${sub?.color}30`:"none",margin:"4px 0 18px",transition:"all .3s"}}>{fmt(sec)}</div>
-      <div style=display:"flex",gap:6,marginBottom:14,flexWrap:"wrap">
+      <div style={{ fontSize: 56, fontFamily: "monospace", fontWeight: 200, textAlign: "center", letterSpacing: 6, color: run?"#e6f1ff":"#4a5072", textShadow: run?`0 0 60px ${sub?.color}30`:"none", margin: "4px 0 18px", transition: "all .3s" }}>{fmt(sec)}</div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
         {SUBJECTS.map(s=>(
-          <button key={s.id} onClick={()=>!run&&setSubj(s.id)} style=background:subj===s.id?s.color:"rgba(255,255,255,.05)",color:subj===s.id?"#fff":"#6b7094",border:"none",borderRadius:7,padding:"5px 12px",fontSize:12,cursor:run?"not-allowed":"pointer",opacity:run&&subj!==s.id?.25:1,fontWeight:subj===s.id?600:400,transition:"all .2s">{s.icon} {s.id}</button>
+          <button key={s.id} onClick={()=>!run&&setSubj(s.id)} style={{ background: subj===s.id?s.color:"rgba(255,255,255,.05)", color: subj===s.id?"#fff":"#6b7094", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 12, cursor: run?"not-allowed":"pointer", opacity: run&&subj!==s.id?.25:1, fontWeight: subj===s.id?600:400, transition: "all .2s" }}>{s.icon} {s.id}</button>
         ))}
       </div>
-      {!run && <input type="text" placeholder="复习内容 (如: 2024.8 CS Q1)" value={note} onChange={e=>setNote(e.target.value)} style=width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.08)",borderRadius:9,padding:"9px 13px",color:"#ccd6f6",fontSize:12,marginBottom:12,outline:"none",boxSizing:"border-box" />}
-      <div style=display:"flex",gap:8>
+      {!run && <input type="text" placeholder="复习内容 (如: 2024.8 CS Q1)" value={note} onChange={e=>setNote(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 9, padding: "9px 13px", color: "#ccd6f6", fontSize: 12, marginBottom: 12, outline: "none", boxSizing: "border-box" }} />}
+      <div style={{ display: "flex", gap: 8 }}>
         {!run ? (
-          <button onClick={go} style=flex:1,background:sub?.color,color:"#fff",border:"none",borderRadius:10,padding:"13px 0",fontSize:15,fontWeight:600,cursor:"pointer",letterSpacing:1>▶ 开始复习</button>
+          <button onClick={go} style={{ flex: 1, background: sub?.color, color: "#fff", border: "none", borderRadius: 10, padding: "13px 0", fontSize: 15, fontWeight: 600, cursor: "pointer", letterSpacing: 1 }}>▶ 开始复习</button>
         ) : (
-          <button onClick={stop} disabled={saving} style=flex:1,background:saving?"#555":"#C62828",color:"#fff",border:"none",borderRadius:10,padding:"13px 0",fontSize:15,fontWeight:600,cursor:"pointer">{saving?"⏳ 记录到Notion中...":"⏹ 结束 → 记录到Notion"}</button>
+          <button onClick={stop} disabled={saving} style={{ flex: 1, background: saving?"#555":"#C62828", color: "#fff", border: "none", borderRadius: 10, padding: "13px 0", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>{saving?"⏳ 记录到Notion中...":"⏹ 结束 → 记录到Notion"}</button>
         )}
       </div>
       {result && (
-        <div style=marginTop:10,padding:"8px 14px",borderRadius:8,fontSize:12,textAlign:"center",background:result.ok?"rgba(67,160,71,.15)":"rgba(198,40,40,.15)",color:result.ok?"#81C784":"#EF9A9A">
+        <div style={{ marginTop: 10, padding: "8px 14px", borderRadius: 8, fontSize: 12, textAlign: "center", background: result.ok?"rgba(67,160,71,.15)":"rgba(198,40,40,.15)", color: result.ok?"#81C784":"#EF9A9A" }}>
           {result.ok ? `✅ 已记录! (${result.minutes}分钟)` : "⚠️ 记录失败"}
         </div>
       )}
@@ -182,32 +151,32 @@ function Timer({ onLog }) {
 
 // ─── Progress Overview ───
 function Progress({ data, loading }) {
-  if(loading) return <Card title="📊 Mastery Progress"><div style=textAlign:"center",padding:30,color:"#999">加载中<Dots /></div></Card>;
-  if(!data) return <Card title="📊 Mastery Progress"><div style=textAlign:"center",padding:30,color:"#bbb">点击 🔄 加载数据</div></Card>;
+  if(loading) return <Card title="📊 Mastery Progress"><div style={{ textAlign: "center", padding: 30, color: "#999" }}>加载中<Dots /></div></Card>;
+  if(!data) return <Card title="📊 Mastery Progress"><div style={{ textAlign: "center", padding: 30, color: "#bbb" }}>点击 🔄 加载数据</div></Card>;
   const subjects = data.bySubject || {};
   return (
     <Card title="📊 Mastery Progress">
-      <div style=display:"flex",flexDirection:"column",gap:10>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {SUBJECTS.map(s => {
           const d = subjects[s.id] || { total:0,green:0,yellow:0,red:0,none:0 };
           const t = d.total||1;
           return (
             <div key={s.id}>
-              <div style=display:"flex",justifyContent:"space-between",marginBottom:4>
-                <span style=fontSize:13,fontWeight:600,color:"#333">{s.icon} {s.id}</span>
-                <span style=fontSize:11,color:"#999",fontFamily:"monospace">🟢{d.green} 🟡{d.yellow} 🔴{d.red} ⬜{d.none}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#333" }}>{s.icon} {s.id}</span>
+                <span style={{ fontSize: 11, color: "#999", fontFamily: "monospace" }}>🟢{d.green} 🟡{d.yellow} 🔴{d.red} ⬜{d.none}</span>
               </div>
-              <div style=height:8,background:"#f0f0f0",borderRadius:4,display:"flex",overflow:"hidden">
-                <div style={{width:`${(d.green/t)*100}%`,background:"#66BB6A",transition:"width .5s"}} />
-                <div style={{width:`${(d.yellow/t)*100}%`,background:"#FFA726",transition:"width .5s"}} />
-                <div style={{width:`${(d.red/t)*100}%`,background:"#EF5350",transition:"width .5s"}} />
+              <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, display: "flex", overflow: "hidden" }}>
+                <div style={{ width: `${(d.green/t)*100}%`, background: "#66BB6A", transition: "width .5s" }} />
+                <div style={{ width: `${(d.yellow/t)*100}%`, background: "#FFA726", transition: "width .5s" }} />
+                <div style={{ width: `${(d.red/t)*100}%`, background: "#EF5350", transition: "width .5s" }} />
               </div>
             </div>
           );
         })}
       </div>
       {data.totalItems && (
-        <div style=marginTop:14,padding:"10px 14px",background:"#f8f8f5",borderRadius:10,fontSize:12,color:"#666",textAlign:"center">
+        <div style={{ marginTop: 14, padding: "10px 14px", background: "#f8f8f5", borderRadius: 10, fontSize: 12, color: "#666", textAlign: "center" }}>
           共 <b>{data.totalItems}</b> 个学习项目 · 🟢 掌握 <b>{data.totalGreen||0}</b> · 完成率 <b>{data.totalItems ? Math.round(((data.totalGreen||0)/data.totalItems)*100) : 0}%</b>
         </div>
       )}
@@ -218,7 +187,7 @@ function Progress({ data, loading }) {
 // ─── Today's Due Items (v2: 新学/复习 + 完成按钮) ───
 function TodayDue({ items, loading, onComplete }) {
   const [busy, setBusy] = useState(null);
-  if(loading) return <Card title="📋 今日学习计划"><div style=textAlign:"center",padding:30,color:"#999">加载中<Dots /></div></Card>;
+  if(loading) return <Card title="📋 今日学习计划"><div style={{ textAlign: "center", padding: 30, color: "#999" }}>加载中<Dots /></div></Card>;
   const list = items || [];
   const doComplete = async (id, m) => {
     setBusy(id);
@@ -228,16 +197,16 @@ function TodayDue({ items, loading, onComplete }) {
   return (
     <Card title={`📋 今日学习计划 (${list.length})`}>
       {list.length === 0 ? (
-        <div style=textAlign:"center",padding:20,color:"#bbb",fontSize:13>{items ? "✅ 今日计划已完成！" : "点击 🔄 加载数据"}</div>
+        <div style={{ textAlign: "center", padding: 20, color: "#bbb", fontSize: 13 }}>{items ? "✅ 今日计划已完成！" : "点击 🔄 加载数据"}</div>
       ) : (
-        <div style=display:"flex",flexDirection:"column",gap:6,maxHeight:320,overflowY:"auto">
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
           {list.map((item,i) => {
             const sub = SUBJECTS.find(s=>s.id===item.subject);
             const isNew = !item.isReview;
             const isBusy = busy === item.id;
             return (
-              <div key={item.id||i} className="due-row" style=borderLeftColor:sub?.color||"#ccc">
-                <span style=fontSize:13>{sub?.icon||"📖"}</span>
+              <div key={item.id||i} className="due-row" style={{ borderLeftColor: sub?.color||"#ccc" }}>
+                <span style={{ fontSize: 13 }}>{sub?.icon||"📖"}</span>
                 <div className="due-info">
                   <div>
                     <span className={isNew ? "tag-new" : "tag-review"}>{isNew ? "🆕新学" : "🔁复习"}</span>
@@ -303,13 +272,13 @@ function Calendar({ logData }) {
 
   return (
     <Card title="📆 Study Calendar">
-      <div style=display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12>
-        <button onClick={prev} style=background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#999",padding:"4px 8px">◂</button>
-        <span style=fontSize:14,fontWeight:600>{yr}年{months[mo]}</span>
-        <button onClick={next} style=background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#999",padding:"4px 8px">▸</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <button onClick={prev} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#999", padding: "4px 8px" }}>◂</button>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{yr}年{months[mo]}</span>
+        <button onClick={next} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#999", padding: "4px 8px" }}>▸</button>
       </div>
-      <div style=display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,textAlign:"center">
-        {wk.map(w=><div key={w} style=fontSize:10,color:"#bbb",padding:3>{w}</div>)}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, textAlign: "center" }}>
+        {wk.map(w=><div key={w} style={{ fontSize: 10, color: "#bbb", padding: 3 }}>{w}</div>)}
         {cells.map((day,i) => {
           if(day===null) return <div key={`e${i}`}/>;
           const ds=`${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
@@ -317,14 +286,14 @@ function Calendar({ logData }) {
           const intensity=info?Math.min(info.minutes/60,1):0;
           const bg=info?`rgba(67,160,71,${0.15+intensity*0.65})`:isT?"#1a1a2e":"transparent";
           return (
-            <div key={i} title={info?`${info.minutes}min · ${info.count}次`:""} style=padding:"5px 0",borderRadius:6,fontSize:12,background:bg,color:isT?"#fff":info?"#1B5E20":"#888",fontWeight:isT?700:400,cursor:info?"help":"default">
+            <div key={i} title={info?`${info.minutes}min · ${info.count}次`:""} style={{ padding: "5px 0", borderRadius: 6, fontSize: 12, background: bg, color: isT?"#fff":info?"#1B5E20":"#888", fontWeight: isT?700:400, cursor: info?"help":"default" }}>
               {day}
-              {info && <div style=fontSize:7,marginTop:1,opacity:.8>{info.minutes}m</div>}
+              {info && <div style={{ fontSize: 7, marginTop: 1, opacity: .8 }}>{info.minutes}m</div>}
             </div>
           );
         })}
       </div>
-      <div style=display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:14>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 14 }}>
         <Stat label="今日" value={`${todayMin}m`} sub={todayMin>=45?"✅达标":`差${Math.max(0,45-todayMin)}m`} />
         <Stat label="本月" value={`${Math.round(moMin/60)}h`} sub={`${moMin}min`} />
         <Stat label="连续" value={`${streak}天`} sub={streak>=7?"🔥 Great!":streak>=3?"👍 加油":"💪 开始"} />
@@ -347,19 +316,19 @@ function PhaseBar({ logData, studyData }) {
         const pct=Math.round((el/total)*100);
         const cur=p===phase, past=t>e, future=t<s;
         return (
-          <div key={i} style={{marginBottom:12,padding:cur?"10px 12px":"6px 12px",background:cur?`${p.color}08`:"transparent",borderRadius:9,border:cur?`1px solid ${p.color}25`:"1px solid transparent",opacity:future?.35:1}}>
-            <div style=display:"flex",justifyContent:"space-between",marginBottom:4>
-              <span style=fontSize:12,fontWeight:cur?700:400,color:cur?p.color:"#666">{cur&&"▸ "}{p.name}</span>
-              <span style=fontSize:10,color:"#aaa",fontFamily:"monospace">{past?"✅":future?`${p.start.slice(5)}~`:`${pct}%`}</span>
+          <div key={i} style={{ marginBottom: 12, padding: cur?"10px 12px":"6px 12px", background: cur?`${p.color}08`:"transparent", borderRadius: 9, border: cur?`1px solid ${p.color}25`:"1px solid transparent", opacity: future?.35:1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: cur?700:400, color: cur?p.color:"#666" }}>{cur&&"▸ "}{p.name}</span>
+              <span style={{ fontSize: 10, color: "#aaa", fontFamily: "monospace" }}>{past?"✅":future?`${p.start.slice(5)}~`:`${pct}%`}</span>
             </div>
-            {cur && <div style=fontSize:11,color:"#888",marginBottom:6>{p.desc}</div>}
-            <div style=height:3,background:"#eee",borderRadius:2>
-              <div style={{height:"100%",width:`${past?100:pct}%`,background:past?"#ccc":p.color,borderRadius:2}} />
+            {cur && <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>{p.desc}</div>}
+            <div style={{ height: 3, background: "#eee", borderRadius: 2 }}>
+              <div style={{ height: "100%", width: `${past?100:pct}%`, background: past?"#ccc":p.color, borderRadius: 2 }} />
             </div>
           </div>
         );
       })}
-      <div style=fontSize:11,color:"#999",textAlign:"center",marginTop:6>📅 累计学习 <b>{studyDays}</b> 天 · 已复习 <b>{reviewed}</b>/{totalItems} 项</div>
+      <div style={{ fontSize: 11, color: "#999", textAlign: "center", marginTop: 6 }}>📅 累计学习 <b>{studyDays}</b> 天 · 已复习 <b>{reviewed}</b>/{totalItems} 项</div>
     </Card>
   );
 }
@@ -379,16 +348,16 @@ function WeeklyPlan() {
   ];
   return (
     <Card title="📋 Weekly Plan">
-      <div style=display:"flex",flexDirection:"column",gap:4>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {plan.map(p => {
           const sub=SUBJECTS.find(s=>s.id===p.sub);
           const cur=p.day===todayKey;
           return (
-            <div key={p.day} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:8,background:cur?`${sub?.color}0d`:"transparent",border:cur?`1.5px solid ${sub?.color}30`:"1.5px solid transparent"}}>
-              <span style=width:32,fontSize:11,fontWeight:cur?800:400,color:cur?sub?.color:"#aaa",fontFamily:"monospace">{p.day}</span>
-              <span style=width:7,height:7,borderRadius:"50%",background:sub?.color,opacity:cur?1:.3,flexShrink:0 />
-              <span style=flex:1,fontSize:12,fontWeight:cur?600:400,color:cur?"#333":"#888">{sub?.icon} {p.sub} <span style=color:"#bbb",fontWeight:400,marginLeft:4>{p.focus}</span></span>
-              <span style=fontSize:10,color:"#bbb",fontFamily:"monospace">{p.min}m</span>
+            <div key={p.day} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 8, background: cur?`${sub?.color}0d`:"transparent", border: cur?`1.5px solid ${sub?.color}30`:"1.5px solid transparent" }}>
+              <span style={{ width: 32, fontSize: 11, fontWeight: cur?800:400, color: cur?sub?.color:"#aaa", fontFamily: "monospace" }}>{p.day}</span>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: sub?.color, opacity: cur?1:.3, flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12, fontWeight: cur?600:400, color: cur?"#333":"#888" }}>{sub?.icon} {p.sub} <span style={{ color: "#bbb", fontWeight: 400, marginLeft: 4 }}>{p.focus}</span></span>
+              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "monospace" }}>{p.min}m</span>
             </div>
           );
         })}
@@ -403,17 +372,17 @@ function RecentAct({ logData }) {
   return (
     <Card title="📝 最近复习记录">
       {recent.length===0 ? (
-        <div style=textAlign:"center",padding:20,color:"#bbb",fontSize:13>暂无记录</div>
+        <div style={{ textAlign: "center", padding: 20, color: "#bbb", fontSize: 13 }}>暂无记录</div>
       ) : (
-        <div style=display:"flex",flexDirection:"column",gap:5,maxHeight:240,overflowY:"auto">
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 240, overflowY: "auto" }}>
           {recent.map((r,i) => {
             const sub=SUBJECTS.find(s=>s.id===r.subject);
             return (
-              <div key={i} style=display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:7,background:"#fafaf7">
-                <div style=width:5,height:5,borderRadius:"50%",background:sub?.color||"#ccc",flexShrink:0 />
-                <div style=flex:1,fontSize:12,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap">{sub?.icon||"📖"} {r.title||r.subject}</div>
-                <span style=fontSize:11,color:"#aaa",fontFamily:"monospace",flexShrink:0>{r.minutes||"?"}m</span>
-                <span style=fontSize:10,color:"#ccc",flexShrink:0>{(r.date||"").slice(5)}</span>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 7, background: "#fafaf7" }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: sub?.color||"#ccc", flexShrink: 0 }} />
+                <div style={{ flex: 1, fontSize: 12, color: "#555", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub?.icon||"📖"} {r.title||r.subject}</div>
+                <span style={{ fontSize: 11, color: "#aaa", fontFamily: "monospace", flexShrink: 0 }}>{r.minutes||"?"}m</span>
+                <span style={{ fontSize: 10, color: "#ccc", flexShrink: 0 }}>{(r.date||"").slice(5)}</span>
               </div>
             );
           })}
@@ -429,9 +398,9 @@ function Motiv({ logData }) {
   const quotes = ["一日一歩、千里の道も","继続は力なり","今日の一問が、合格への一歩","努力は裏切らない","京大で待ってるよ"];
   const q = quotes[new Date().getDate()%quotes.length];
   return (
-    <div style=background:"linear-gradient(135deg,#fdfcfb,#e8ddd0)",borderRadius:16,padding:"16px 22px",border:"1px solid #e0d5c9",textAlign:"center">
-      <div style=fontSize:16,fontWeight:300,color:"#5D4E37",fontStyle:"italic",letterSpacing:1>「{q}」</div>
-      <div style=fontSize:11,color:"#A08B6F",marginTop:8>累计学习 <b>{totalH}</b> 小时 · 距考试 <b>{daysLeft()}</b> 天</div>
+    <div style={{ background: "linear-gradient(135deg,#fdfcfb,#e8ddd0)", borderRadius: 16, padding: "16px 22px", border: "1px solid #e0d5c9", textAlign: "center" }}>
+      <div style={{ fontSize: 16, fontWeight: 300, color: "#5D4E37", fontStyle: "italic", letterSpacing: 1 }}>「{q}」</div>
+      <div style={{ fontSize: 11, color: "#A08B6F", marginTop: 8 }}>累计学习 <b>{totalH}</b> 小时 · 距考试 <b>{daysLeft()}</b> 天</div>
     </div>
   );
 }
@@ -440,7 +409,7 @@ function Motiv({ logData }) {
 function Tip() {
   return (
     <Card title="💡 How It Works">
-      <div style=fontSize:12,color:"#666",lineHeight:2>
+      <div style={{ fontSize: 12, color: "#666", lineHeight: 2 }}>
         <div>1️⃣ <b>打开 Dashboard</b> → 自动排题 (assign-daily)</div>
         <div>2️⃣ <b>学完一题</b> → 点 🔴🟡🟢 → 自动更新 Mastery + Redo Date</div>
         <div>3️⃣ <b>用计时器</b> → 计时 → 自动记录到 Notion 復習ログ</div>
@@ -504,26 +473,26 @@ function App() {
   };
 
   return (
-    <div style=minHeight:"100vh",background:"#f5f4f0",fontFamily:"'Noto Sans JP','Noto Sans SC',-apple-system,sans-serif">
-      <div style=maxWidth:920,margin:"0 auto",padding:"20px 16px">
-        <div style=display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14>
-          <div style=fontSize:11,color:"#aaa">{lastSync ? `最后同步: ${lastSync}` : "加载中..."}</div>
-          <button onClick={fetchData} disabled={loading} style=background:loading?"#eee":"#1a1a2e",color:loading?"#999":"#fff",border:"none",borderRadius:8,padding:"7px 16px",fontSize:12,cursor:loading?"not-allowed":"pointer",fontWeight:500>
+    <div style={{ minHeight: "100vh", background: "#f5f4f0", fontFamily: "'Noto Sans JP','Noto Sans SC',-apple-system,sans-serif" }}>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "20px 16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: "#aaa" }}>{lastSync ? `最后同步: ${lastSync}` : "加载中..."}</div>
+          <button onClick={fetchData} disabled={loading} style={{ background: loading?"#eee":"#1a1a2e", color: loading?"#999":"#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 12, cursor: loading?"not-allowed":"pointer", fontWeight: 500 }}>
             {loading ? "⏳ 同步中..." : "🔄 从 Notion 同步数据"}
           </button>
         </div>
 
         <Countdown phase={curPhase()} assignInfo={assignInfo} />
-        <div style=marginTop:14><Motiv logData={logData} /></div>
+        <div style={{ marginTop: 14 }}><Motiv logData={logData} /></div>
 
-        <div style=display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:14,marginTop:14>
-          <div style=display:"flex",flexDirection:"column",gap:14>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14, marginTop: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <Timer onLog={handleLog} />
             <TodayDue items={dueItems} loading={loading} onComplete={handleComplete} />
             <GCalButton />
             <Tip />
           </div>
-          <div style=display:"flex",flexDirection:"column",gap:14>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <Progress data={studyData} loading={loading} />
             <Calendar logData={logData} />
             <WeeklyPlan />
@@ -537,6 +506,3 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
-</body>
-</html>
