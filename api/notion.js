@@ -31,7 +31,7 @@ async function queryAll(dbId, filter, sorts) {
     results = results.concat(resp.results);
     cursor = resp.has_more ? resp.next_cursor : undefined;
     pages++;
-  } while (cursor && pages < 10); // max 1000
+  } while (cursor && pages < 10);
   return results;
 }
 
@@ -100,6 +100,112 @@ function parseCheckin(p) {
   };
 }
 
+// ---------- Smart Daily Plan Generator ----------
+function priorityOrder(pri) {
+  if (!pri) return 4;
+  if (pri.includes('S')) return 0;
+  if (pri.includes('A')) return 1;
+  if (pri.includes('B')) return 2;
+  if (pri.includes('C')) return 3;
+  return 4;
+}
+
+function generateDailyPlan(parsedItems, parsedLogs, today) {
+  const now = todayJST();
+  const dow = now.getDay();
+  const isWeekend = dow === 0 || dow === 6;
+
+  // 1. Review items: items with redoDate <= today
+  const reviewItems = parsedItems.filter(item => {
+    if (!item.redoDate) return false;
+    return item.redoDate <= today;
+  });
+
+  // 2. New study items: never studied before
+  const studiedIds = new Set();
+  parsedLogs.forEach(l => l.studyItemIds.forEach(id => studiedIds.add(id)));
+
+  const unstudied = parsedItems.filter(item => {
+    if (studiedIds.has(item.id)) return false;
+    if (item.timeSpent > 0) return false;
+    if (item.redoDate && item.redoDate <= today) return false;
+    if (!item.name) return false;
+    return true;
+  });
+
+  // Sort by priority
+  unstudied.sort((a, b) => {
+    const pa = priorityOrder(a.priority);
+    const pb = priorityOrder(b.priority);
+    if (pa !== pb) return pa - pb;
+    return (a.subject || '').localeCompare(b.subject || '');
+  });
+
+  // Daily targets
+  const dailyNewTarget = isWeekend ? 10 : 6;
+  const maxReviewItems = isWeekend ? 15 : 10;
+
+  // Subject-balanced selection (round-robin across subjects)
+  const subjectBuckets = {};
+  unstudied.forEach(item => {
+    const sub = item.subject || 'Other';
+    if (!subjectBuckets[sub]) subjectBuckets[sub] = [];
+    subjectBuckets[sub].push(item);
+  });
+
+  const newItems = [];
+  const subjects = Object.keys(subjectBuckets);
+  let round = 0;
+  while (newItems.length < dailyNewTarget && round < 20) {
+    let added = false;
+    for (const sub of subjects) {
+      if (newItems.length >= dailyNewTarget) break;
+      if (subjectBuckets[sub].length > 0) {
+        newItems.push(subjectBuckets[sub].shift());
+        added = true;
+      }
+    }
+    if (!added) break;
+    round++;
+  }
+
+  // 3. Combine: reviews first, then new items
+  const cappedReviews = reviewItems
+    .sort((a, b) => {
+      const pa = priorityOrder(a.priority);
+      const pb = priorityOrder(b.priority);
+      if (pa !== pb) return pa - pb;
+      const mOrder = { '🔴': 0, '🟡': 1, '🟢': 2 };
+      return (mOrder[a.mastery] ?? 3) - (mOrder[b.mastery] ?? 3);
+    })
+    .slice(0, maxReviewItems);
+
+  const plan = [
+    ...cappedReviews.map(item => ({ ...item, queueType: 'review' })),
+    ...newItems.map(item => ({ ...item, queueType: 'new' })),
+  ];
+
+  // Estimated time
+  const estimatedMinutes = plan.reduce((sum, item) => {
+    if (item.queueType === 'review') {
+      if (item.mastery === '🟢') return sum + 5;
+      if (item.mastery === '🟡') return sum + 10;
+      return sum + 15;
+    }
+    return sum + 15;
+  }, 0);
+
+  return {
+    plan,
+    reviewCount: cappedReviews.length,
+    newCount: newItems.length,
+    totalCount: plan.length,
+    estimatedMinutes,
+    isWeekend,
+    unstudiedRemaining: unstudied.length - newItems.length,
+  };
+}
+
 // ---------- API handlers ----------
 async function getAll() {
   const today = dateStrJST();
@@ -112,22 +218,18 @@ async function getAll() {
 
   const parsedItems = items.map(parseStudyItem);
   const parsedLogs = logs.map(parseLog).filter(l => {
-    // Only include logs with actual review activity
     if (!l.reviewDate) return false;
     if (l.reviewDate > today) return false;
     return true;
   });
   const parsedCheckins = checkins.map(parseCheckin).filter(c => {
-    // Filter out fake/future data
     if (!c.date) return false;
     if (c.date > today) return false;
     if (c.minutes <= 0 && !c.cs && !c.ai && !c.hci && !c.se && !c.ir) return false;
     return true;
   });
 
-  // --- Mastery stats (only count items that have actually been studied) ---
-  // Items with mastery AND (has a log OR has timeSpent > 0 OR has a redoDate) are "studied"
-  // Items with no mastery are "not studied yet" (don't count 🔴 as studied if it was pre-set)
+  // Mastery stats
   const itemsWithLogs = new Set();
   parsedLogs.forEach(l => l.studyItemIds.forEach(id => itemsWithLogs.add(id)));
 
@@ -157,22 +259,23 @@ async function getAll() {
     }
   });
 
-  // --- Due today (only items with redo date <= today, not empty dates) ---
+  // Legacy dueToday
   const dueToday = parsedItems.filter(item => {
     if (!item.redoDate) return false;
     return item.redoDate <= today;
   }).sort((a, b) => {
-    // Priority sort: S > A > B > C > empty
     const pOrder = { '🔴 S 必须掌握': 0, '🟠 A 重要': 1, '🟡 B 建议学': 2, '🟢 C 了解即可': 3 };
     const pa = pOrder[a.priority] ?? 4;
     const pb = pOrder[b.priority] ?? 4;
     if (pa !== pb) return pa - pb;
-    // Then by mastery: 🔴 > 🟡 > 🟢
     const mOrder = { '🔴': 0, '🟡': 1, '🟢': 2 };
     return (mOrder[a.mastery] ?? 3) - (mOrder[b.mastery] ?? 3);
   });
 
-  // --- Phase progress ---
+  // Smart daily plan
+  const dailyPlan = generateDailyPlan(parsedItems, parsedLogs, today);
+
+  // Phase progress
   const phaseItems = {};
   parsedCheckins.forEach(c => {
     if (c.phase && !phaseItems[c.phase]) {
@@ -184,7 +287,7 @@ async function getAll() {
     }
   });
 
-  // --- Streak calculation (real data only) ---
+  // Streak
   const studyDates = new Set();
   parsedCheckins.forEach(c => {
     if (c.minutes > 0) studyDates.add(c.date);
@@ -195,7 +298,6 @@ async function getAll() {
 
   let streak = 0;
   const d = todayJST();
-  // Check if studied today
   if (studyDates.has(today)) {
     streak = 1;
     d.setDate(d.getDate() - 1);
@@ -210,17 +312,17 @@ async function getAll() {
     }
   }
 
-  // --- Total hours ---
+  // Total hours
   let totalMinutes = 0;
   parsedCheckins.forEach(c => { totalMinutes += c.minutes; });
   parsedLogs.forEach(l => { totalMinutes += l.timeSpent; });
 
-  // --- Countdown ---
+  // Countdown
   const examDate = new Date('2026-08-01T00:00:00+09:00');
   const nowJST = todayJST();
   const daysLeft = Math.ceil((examDate - nowJST) / (1000 * 60 * 60 * 24));
 
-  // --- Heatmap data (last 6 months) ---
+  // Heatmap
   const heatmap = {};
   parsedCheckins.forEach(c => {
     if (c.date && c.minutes > 0) {
@@ -233,6 +335,11 @@ async function getAll() {
     }
   });
 
+  // Today's completed items
+  const todayLogs = parsedLogs.filter(l => l.reviewDate === today);
+  const todayCompletedIds = new Set();
+  todayLogs.forEach(l => l.studyItemIds.forEach(id => todayCompletedIds.add(id)));
+
   return {
     items: parsedItems,
     logs: parsedLogs.slice(0, 20),
@@ -240,6 +347,7 @@ async function getAll() {
     masteryStats,
     subjectStats,
     dueToday,
+    dailyPlan,
     phaseItems,
     streak,
     totalHours: Math.round(totalMinutes / 60 * 10) / 10,
@@ -247,6 +355,7 @@ async function getAll() {
     today,
     heatmap,
     studyDates: Array.from(studyDates),
+    todayCompletedIds: Array.from(todayCompletedIds),
   };
 }
 
@@ -254,100 +363,67 @@ async function getAll() {
 async function completeReview({ studyItemId, studyItemName, subject, timeSpent, mastery, method, notes, startTime, endTime }) {
   const today = dateStrJST();
 
-  // 1. Create review log entry
   const logProps = {
     Title: { title: [{ text: { content: studyItemName || `Review ${today}` } }] },
     'Review Date': { date: { start: today } },
     'Time Spent (min)': { number: timeSpent || 0 },
   };
 
-  if (mastery) {
-    logProps.Mastery = { select: { name: mastery } };
-  }
-  if (method) {
-    logProps.Method = { select: { name: method } };
-  }
-  if (notes) {
-    logProps.Notes = { rich_text: [{ text: { content: notes } }] };
-  }
-  if (startTime) {
-    logProps['Start Time'] = { date: { start: startTime } };
-  }
-  if (endTime) {
-    logProps['End Time'] = { date: { start: endTime } };
-  }
-  if (studyItemId) {
-    logProps['Study Item'] = { relation: [{ id: studyItemId }] };
-  }
+  if (mastery) logProps.Mastery = { select: { name: mastery } };
+  if (method) logProps.Method = { select: { name: method } };
+  if (notes) logProps.Notes = { rich_text: [{ text: { content: notes } }] };
+  if (startTime) logProps['Start Time'] = { date: { start: startTime } };
+  if (endTime) logProps['End Time'] = { date: { start: endTime } };
+  if (studyItemId) logProps['Study Item'] = { relation: [{ id: studyItemId }] };
 
   const logPage = await notion.pages.create({
     parent: { database_id: DB_LOG },
     properties: logProps,
   });
 
-  // 2. Update the study item's mastery & redo date if provided
   if (studyItemId) {
     const updateProps = {};
 
     if (mastery) {
-      // Map log mastery to item mastery
-      const masteryMap = {
-        '🟢 掌握': '🟢',
-        '🟡 半熟': '🟡',
-        '🔴 不会': '🔴',
-      };
+      const masteryMap = { '🟢 掌握': '🟢', '🟡 半熟': '🟡', '🔴 不会': '🔴' };
       if (masteryMap[mastery]) {
         updateProps.Mastery = { select: { name: masteryMap[mastery] } };
       }
     }
 
-    // Calculate next redo date based on mastery (spaced repetition)
+    // Spaced repetition intervals
     const nextDate = new Date(todayJST());
     if (mastery === '🟢 掌握') {
-      nextDate.setDate(nextDate.getDate() + 14); // 2 weeks
+      nextDate.setDate(nextDate.getDate() + 14);
     } else if (mastery === '🟡 半熟') {
-      nextDate.setDate(nextDate.getDate() + 3); // 3 days
+      nextDate.setDate(nextDate.getDate() + 3);
     } else {
-      nextDate.setDate(nextDate.getDate() + 1); // tomorrow
+      nextDate.setDate(nextDate.getDate() + 1);
     }
     const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
     updateProps['Redo Date'] = { date: { start: nextDateStr } };
 
     if (Object.keys(updateProps).length > 0) {
-      await notion.pages.update({
-        page_id: studyItemId,
-        properties: updateProps,
-      });
+      await notion.pages.update({ page_id: studyItemId, properties: updateProps });
     }
   }
 
-  // 3. Update or create today's checkin
+  // Update or create today's checkin
   try {
     const existingCheckins = await notion.databases.query({
       database_id: DB_CHECKIN,
-      filter: {
-        property: 'Date',
-        date: { equals: today }
-      }
+      filter: { property: 'Date', date: { equals: today } }
     });
 
     if (existingCheckins.results.length > 0) {
       const existing = existingCheckins.results[0];
       const currentMin = existing.properties.Minutes?.number || 0;
-      const updateP = {
-        Minutes: { number: currentMin + (timeSpent || 0) },
-      };
-      // Set subject checkbox
+      const updateP = { Minutes: { number: currentMin + (timeSpent || 0) } };
       if (subject) {
         const subjectMap = { CS: 'CS', AI: 'AI', HCI: 'HCI', SE: 'SE', IR: 'IR' };
-        if (subjectMap[subject]) {
-          updateP[subjectMap[subject]] = { checkbox: true };
-        }
+        if (subjectMap[subject]) updateP[subjectMap[subject]] = { checkbox: true };
       }
-      await notion.pages.update({
-        page_id: existing.id,
-        properties: updateP,
-      });
+      await notion.pages.update({ page_id: existing.id, properties: updateP });
     } else {
       const newP = {
         Name: { title: [{ text: { content: `Day ${today}` } }] },
@@ -358,14 +434,9 @@ async function completeReview({ studyItemId, studyItemName, subject, timeSpent, 
       };
       if (subject) {
         const subjectMap = { CS: 'CS', AI: 'AI', HCI: 'HCI', SE: 'SE', IR: 'IR' };
-        if (subjectMap[subject]) {
-          newP[subjectMap[subject]] = { checkbox: true };
-        }
+        if (subjectMap[subject]) newP[subjectMap[subject]] = { checkbox: true };
       }
-      await notion.pages.create({
-        parent: { database_id: DB_CHECKIN },
-        properties: newP,
-      });
+      await notion.pages.create({ parent: { database_id: DB_CHECKIN }, properties: newP });
     }
   } catch (e) {
     console.error('Checkin update error:', e.message);
@@ -376,7 +447,6 @@ async function completeReview({ studyItemId, studyItemName, subject, timeSpent, 
 
 // ---------- Vercel handler ----------
 module.exports = async (req, res) => {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -402,7 +472,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
-
-
-
-
