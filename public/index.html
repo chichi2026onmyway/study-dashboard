@@ -74,7 +74,7 @@ async function api(action, body) {
 function Dots() {
   const [d, setD] = useState("");
   useEffect(() => { const i = setInterval(() => setD(v => v.length>=3?"":v+"."),400); return ()=>clearInterval(i); }, []);
-  return <span style=fontFamily:"monospace">{d||"."}</span>;
+  return <span style={{ fontFamily: "monospace" }}>{d||"."}</span>;
 }
 function Card({ title, children }) {
   return (
