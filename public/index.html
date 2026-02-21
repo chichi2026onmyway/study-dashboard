@@ -2,596 +2,569 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>京大社情 Study Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f1117;
-  --card: #1a1d27;
-  --card-border: #2a2d3a;
-  --text: #e4e4e7;
-  --text-dim: #71717a;
-  --text-muted: #52525b;
-  --accent: #6366f1;
-  --accent-glow: rgba(99,102,241,0.15);
-  --green: #22c55e;
-  --yellow: #eab308;
-  --red: #ef4444;
-  --orange: #f97316;
-  --blue: #3b82f6;
+  --bg: #f8f6f2;
+  --card: #ffffff;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  --card-hover: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+  --border: #eee8e0;
+  --text: #2d2a26;
+  --text-secondary: #8a8580;
+  --text-muted: #b5b0aa;
+  --accent: #e8836b;
+  --accent-light: #fef0ec;
+  --green: #5cb85c;
+  --green-light: #eef8ee;
+  --yellow: #f0ad4e;
+  --yellow-light: #fef8ec;
+  --red: #d9534f;
+  --red-light: #fceeed;
+  --blue: #5b9bd5;
+  --blue-light: #eef4fb;
+  --purple: #9b6db0;
+  --cs-color: #e8b849;
+  --ai-color: #5b9bd5;
+  --hci-color: #5cb85c;
+  --se-color: #e8836b;
+  --ir-color: #e89b49;
   --radius: 14px;
+  --radius-sm: 10px;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: 'Noto Sans JP', -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
-.mono { font-family: 'JetBrains Mono', monospace; }
-.app { max-width: 520px; margin: 0 auto; padding: 16px 12px 80px; }
 
-/* Header */
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Layout */
+.dashboard { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+
 .header {
   text-align: center;
   padding: 28px 0 20px;
-  position: relative;
-}
-.header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 20%;
-  right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--card-border), transparent);
 }
 .header-title {
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 6px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
 }
-.countdown-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 56px;
+.header-main {
+  font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 2px;
 }
-.countdown-label {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-.header-quote {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-top: 12px;
+.header-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 /* Cards */
 .card {
   background: var(--card);
-  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  padding: 18px;
+  padding: 20px;
   margin-bottom: 14px;
-  transition: border-color 0.2s;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border);
+  transition: box-shadow .2s;
 }
-.card:hover { border-color: #3a3d4a; }
+.card:hover { box-shadow: var(--card-hover); }
 .card-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
   margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
-.card-title span { font-size: 15px; }
 
-/* Quick Stats Row */
-.quick-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
 }
+
+/* Stats boxes */
 .stat-box {
-  background: rgba(255,255,255,0.03);
-  border-radius: 10px;
-  padding: 12px 10px;
   text-align: center;
+  padding: 14px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
 }
-.stat-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
-.stat-value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text); }
-.stat-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.stat-label { font-size: 10px; color: var(--text-muted); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.stat-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 
-/* GitHub Heatmap */
-.heatmap-wrap { overflow-x: auto; padding: 4px 0; }
-.heatmap-grid { display: flex; gap: 3px; }
-.heatmap-col { display: flex; flex-direction: column; gap: 3px; }
-.heatmap-cell {
-  width: 12px; height: 12px;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.06);
-  transition: background 0.15s;
+/* Progress bar */
+.progress-track { height: 6px; background: #f0ece6; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width .8s ease; }
+
+/* Subject badge */
+.subj-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
 }
-.heatmap-cell:hover { outline: 1px solid rgba(255,255,255,0.2); }
-.heatmap-cell.lv1 { background: #0e4429; }
-.heatmap-cell.lv2 { background: #006d32; }
-.heatmap-cell.lv3 { background: #26a641; }
-.heatmap-cell.lv4 { background: #39d353; }
-.heatmap-legend {
+.subj-CS { background: #fef5e0; color: #a07820; }
+.subj-AI { background: #e8f0fb; color: #3a6da8; }
+.subj-HCI { background: #e8f5e8; color: #3a8a3a; }
+.subj-SE { background: #fce8e4; color: #b05840; }
+.subj-IR { background: #fef0e0; color: #a07830; }
+
+/* Priority badge */
+.pri-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.pri-S { background: var(--red-light); color: var(--red); }
+.pri-A { background: #fef0e0; color: #c07020; }
+.pri-B { background: var(--yellow-light); color: #a08020; }
+.pri-C { background: var(--green-light); color: var(--green); }
+
+/* Mastery dot */
+.mastery-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.mastery-green { background: var(--green); }
+.mastery-yellow { background: var(--yellow); }
+.mastery-red { background: var(--red); }
+
+/* Heatmap */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 13px);
+  gap: 3px;
+  justify-content: center;
+}
+.heatmap-cell {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: #f0ece6;
+  transition: background .2s;
+}
+.heatmap-cell[data-level="1"] { background: #d4edda; }
+.heatmap-cell[data-level="2"] { background: #a3d9a5; }
+.heatmap-cell[data-level="3"] { background: #6bc46d; }
+.heatmap-cell[data-level="4"] { background: #3aaa3c; }
+.heatmap-cell.today { outline: 2px solid var(--text); outline-offset: -1px; }
+
+/* Due list */
+.due-item {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 10px;
-  color: var(--text-muted);
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  transition: background .15s;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
-.heatmap-legend .heatmap-cell { width: 10px; height: 10px; cursor: default; }
-.heatmap-months {
+.due-item:hover { background: var(--bg); }
+.due-item-name { font-size: 13px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.due-item-meta { font-size: 11px; color: var(--text-secondary); }
+
+/* Weekly schedule */
+.week-row {
   display: flex;
-  font-size: 10px;
-  color: var(--text-muted);
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
   margin-bottom: 4px;
-  gap: 3px;
+  transition: background .15s;
+}
+.week-row.active { background: var(--accent-light); border: 1px solid #f0c8be; }
+.week-day { width: 36px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.week-row.active .week-day { color: var(--accent); }
+.week-subject { flex: 1; font-size: 13px; font-weight: 500; }
+.week-time { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+
+/* Phase */
+.phase-item {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+.phase-active { border: 1.5px solid; }
+.phase-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.phase-desc { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
+
+/* Timer */
+.timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 48px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+  padding: 16px 0;
+  letter-spacing: 2px;
+}
+.timer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+.timer-btn:active { transform: scale(0.97); }
+.btn-start { background: var(--green); color: white; }
+.btn-start:hover { background: #4caa4c; }
+.btn-stop { background: var(--red); color: white; }
+.btn-stop:hover { background: #c94540; }
+.btn-save { background: var(--blue); color: white; }
+.btn-save:hover { background: #4a8ac5; }
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { background: var(--bg); }
+
+.timer-subject-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.subj-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+.subj-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.subj-btn:hover { border-color: var(--text-muted); }
+
+/* Select dropdown */
+select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: white;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
 }
 
-/* Mastery Progress */
-.mastery-bar-wrap {
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--text-muted);
+}
+.loading-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Scroll */
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+}
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--text);
+  color: white;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 10;
+}
+.tooltip:hover::after { opacity: 1; }
+
+/* Mastery bar segments */
+.mastery-bar {
   display: flex;
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
-  background: rgba(255,255,255,0.06);
-  margin: 6px 0;
+  background: #f0ece6;
 }
-.mastery-bar-seg { height: 100%; transition: width 0.6s ease; }
-.mastery-legend {
-  display: flex;
-  gap: 12px;
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-top: 6px;
-}
-.mastery-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-right: 4px;
-  vertical-align: middle;
-}
-
-/* Due Items */
-.due-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  gap: 10px;
-}
-.due-item:last-child { border-bottom: none; }
-.due-badge {
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.due-name { font-size: 13px; flex: 1; }
-.due-priority { font-size: 11px; color: var(--text-muted); }
-.due-mastery { font-size: 14px; }
-
-/* Phase Progress */
-.phase-highlight {
-  padding: 14px 16px;
-  border-radius: 12px;
-  margin-bottom: 14px;
-  border: 1.5px solid;
-}
-.phase-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.phase-progress-bar {
-  height: 6px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 8px 0;
-}
-.phase-progress-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.8s ease;
-}
-.phase-timeline {
-  margin-bottom: 8px;
-  padding: 6px 12px;
-}
-
-/* Weekly Plan */
-.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.week-cell {
-  text-align: center;
-  padding: 8px 4px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.03);
-  transition: background 0.2s;
-}
-.week-cell.today {
-  background: var(--accent-glow);
-  border: 1px solid rgba(99,102,241,0.3);
-}
-.week-day { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
-.week-icon { font-size: 18px; margin-bottom: 2px; }
-.week-subject { font-size: 10px; color: var(--text-dim); }
-
-/* Timer */
-.timer-section { text-align: center; padding: 8px 0; }
-.timer-display {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 48px;
-  font-weight: 700;
-  color: var(--accent);
-  margin: 12px 0;
-}
-.timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
-.btn {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Noto Sans JP', sans-serif;
-  transition: all 0.2s;
-}
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: #5558e6; }
-.btn-secondary { background: rgba(255,255,255,0.08); color: var(--text-dim); }
-.btn-secondary:hover { background: rgba(255,255,255,0.12); }
-.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); }
-.btn-danger:hover { background: rgba(239,68,68,0.25); }
-.timer-subject-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
-.pill {
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-  border: 1px solid var(--card-border);
-  background: transparent;
-  color: var(--text-dim);
-  font-family: 'Noto Sans JP', sans-serif;
-  transition: all 0.2s;
-}
-.pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
-
-/* Recent Logs */
-.log-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-size: 12px;
-}
-.log-item:last-child { border-bottom: none; }
-.log-title { color: var(--text); flex: 1; }
-.log-meta { color: var(--text-muted); font-size: 11px; }
-
-/* Loading & Error */
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
-  flex-direction: column;
-  gap: 16px;
-}
-.spinner {
-  width: 32px; height: 32px;
-  border: 3px solid var(--card-border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Tooltip */
-.tooltip {
-  position: absolute;
-  background: #2a2d3a;
-  color: var(--text);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  pointer-events: none;
-  z-index: 10;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-/* Tab Navigation */
-.tab-nav {
-  display: flex;
-  gap: 0;
-  background: var(--card);
-  border-radius: var(--radius);
-  border: 1px solid var(--card-border);
-  padding: 4px;
-  margin-bottom: 14px;
-}
-.tab-btn {
-  flex: 1;
-  padding: 8px 0;
-  border: none;
-  background: transparent;
-  color: var(--text-dim);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 10px;
-  font-family: 'Noto Sans JP', sans-serif;
-  transition: all 0.2s;
-}
-.tab-btn.active {
-  background: var(--accent-glow);
-  color: var(--accent);
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fade-in { animation: fadeIn 0.3s ease forwards; }
-.fade-in-d1 { animation-delay: 0.05s; opacity: 0; }
-.fade-in-d2 { animation-delay: 0.1s; opacity: 0; }
-.fade-in-d3 { animation-delay: 0.15s; opacity: 0; }
-.fade-in-d4 { animation-delay: 0.2s; opacity: 0; }
-.fade-in-d5 { animation-delay: 0.25s; opacity: 0; }
+.mastery-bar > div { transition: width .6s ease; }
 </style>
 </head>
 <body>
 <div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
-// ===== Config =====
-const API_BASE = "/api/notion";
+// ── Config ────────────────────────────────────────────
+const API = "/api/notion";
 const EXAM_DATE = "2026-08-01";
-const PHASES = [
-  { name: "Phase 1 基礎", start: "2026-02-19", end: "2026-04-15", color: "#6366f1", desc: "通読教材 + S級知識点" },
-  { name: "Phase 2 過去問", start: "2026-04-16", end: "2026-06-15", color: "#3b82f6", desc: "全部過去問" },
-  { name: "Phase 3 弱点強化", start: "2026-06-16", end: "2026-07-20", color: "#f97316", desc: "重做 + 模擬" },
-  { name: "Phase 4 衝刺", start: "2026-07-21", end: "2026-08-10", color: "#ef4444", desc: "限時模擬" },
-];
 const SUBJECTS = ["CS", "AI", "HCI", "SE", "IR"];
-const SUBJECT_ICONS = { CS: "💻", AI: "🤖", HCI: "🖱️", SE: "⚙️", IR: "🔍" };
-const SUBJECT_COLORS = { CS: "#6366f1", AI: "#3b82f6", HCI: "#22c55e", SE: "#f97316", IR: "#eab308" };
-const WEEK_PLAN = [
-  { day: "月", icon: "💻", subject: "CS", focus: "基礎" },
-  { day: "火", icon: "🤖", subject: "AI", focus: "演習" },
-  { day: "水", icon: "🖱️", subject: "HCI", focus: "設計" },
-  { day: "木", icon: "⚙️", subject: "SE", focus: "理論" },
-  { day: "金", icon: "💻", subject: "CS", focus: "算法" },
-  { day: "土", icon: "🔍", subject: "IR+総合", focus: "過去問" },
-  { day: "日", icon: "📚", subject: "総合", focus: "補強" },
+const SUBJ_EMOJI = { CS: "💻", AI: "🤖", HCI: "🧑‍💻", SE: "⚙️", IR: "🔍" };
+const SUBJ_COLOR = { CS: "#e8b849", AI: "#5b9bd5", HCI: "#5cb85c", SE: "#e8836b", IR: "#e89b49" };
+
+const PHASES = [
+  { name: "Phase 1: 基礎扫盲", desc: "通读教材 + S级知识点", start: "2026-03-01", end: "2026-04-30", color: "#5b9bd5" },
+  { name: "Phase 2: 过去問", desc: "全部过去问 + Mastery标记", start: "2026-05-01", end: "2026-06-15", color: "#e89b49" },
+  { name: "Phase 3: 弱点攻克", desc: "消灭🔴, 巩固🟡", start: "2026-06-16", end: "2026-07-15", color: "#e8836b" },
+  { name: "Phase 4: 冲刺", desc: "模拟考试 + 速记卡", start: "2026-07-16", end: "2026-08-01", color: "#9b6db0" },
 ];
 
-// ===== Helpers =====
-function todayStr() {
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return jst.toISOString().split("T")[0];
+const WEEKLY = [
+  { day: "Mon", subj: "CS", task: "Ch1-4 基础概念", mins: 45 },
+  { day: "Tue", subj: "AI", task: "过去問 + 知识点", mins: 45 },
+  { day: "Wed", subj: "HCI", task: "実験設計/応用", mins: 45 },
+  { day: "Thu", subj: "SE", task: "章節重点", mins: 45 },
+  { day: "Fri", subj: "CS", task: "Ch5-8 算法/数据", mins: 45 },
+  { day: "Sat", subj: "IR", task: "过去問集中", mins: 120 },
+  { day: "Sun", subj: "CS", task: "Ch9-12 + 弱点補強", mins: 120 },
+];
+
+function today() {
+  const d = new Date();
+  return new Date(d.getTime() + 9 * 3600000).toISOString().split("T")[0];
+}
+
+function dayOfWeek() {
+  const d = new Date();
+  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
 }
 
 function curPhase() {
-  const t = new Date(todayStr());
+  const t = today();
   for (let i = 0; i < PHASES.length; i++) {
-    if (t >= new Date(PHASES[i].start) && t <= new Date(PHASES[i].end)) return { ...PHASES[i], num: i + 1 };
+    if (t >= PHASES[i].start && t <= PHASES[i].end) return { ...PHASES[i], idx: i };
   }
-  return { ...PHASES[0], num: 1 };
+  if (t < PHASES[0].start) return { ...PHASES[0], idx: 0, pre: true };
+  return { ...PHASES[PHASES.length - 1], idx: PHASES.length - 1 };
 }
 
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+// ── API ───────────────────────────────────────────────
+async function fetchAPI(action, body) {
+  const opts = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
+  const r = await fetch(`${API}?action=${action}`, opts);
+  return r.json();
 }
 
-// ===== Components =====
+// ── Components ────────────────────────────────────────
 
-function Header({ data }) {
-  const days = data?.summary?.daysUntilExam ?? "—";
+function CountdownCard({ daysLeft }) {
+  const d = daysLeft || Math.ceil((new Date(EXAM_DATE) - new Date(today())) / 86400000);
+  const pct = Math.max(0, Math.min(100, ((161 - d) / 161) * 100)); // ~161 days from Feb 21 to Aug 1
   return (
-    <div className="header fade-in">
-      <div className="header-title">京大 社会情報学 2026.8</div>
-      <div className="countdown-num">{days}</div>
-      <div className="countdown-label">days until exam</div>
-      <div className="header-quote">「継続は力なり」— 毎日15分でも、やらないよりずっと強い</div>
-    </div>
-  );
-}
-
-function QuickStats({ data }) {
-  const stats = data?.calendarStats || {};
-  const summary = data?.summary || {};
-  return (
-    <div className="quick-stats fade-in fade-in-d1">
-      <div className="stat-box">
-        <div className="stat-label">🔥 連続</div>
-        <div className="stat-value">{stats.streak || 0}</div>
-        <div className="stat-sub">日</div>
-      </div>
-      <div className="stat-box">
-        <div className="stat-label">📚 今月</div>
-        <div className="stat-value">{stats.monthDays || 0}</div>
-        <div className="stat-sub">日 / {Math.round((stats.monthMinutes || 0) / 60)}h</div>
-      </div>
-      <div className="stat-box">
-        <div className="stat-label">✅ 掌握</div>
-        <div className="stat-value">{summary.totalGreen || 0}</div>
-        <div className="stat-sub">/ {summary.totalItems || 0}</div>
+    <div className="card" style={{textAlign:"center", background:"linear-gradient(135deg, #fef8f4 0%, #fff 100%)"}}>
+      <div className="card-title">⏳ 考试倒计时</div>
+      <div className="mono" style={{fontSize:52, fontWeight:700, color:"var(--accent)", lineHeight:1.1}}>{d}</div>
+      <div style={{fontSize:13, color:"var(--text-secondary)", marginTop:4}}>天 · 目标 2026.8.1 京大社情</div>
+      <div style={{marginTop:12}}>
+        <div className="progress-track">
+          <div className="progress-fill" style={{width:`${pct}%`, background:"linear-gradient(90deg, var(--accent), #e8b849)"}} />
+        </div>
+        <div style={{fontSize:10, color:"var(--text-muted)", marginTop:4}}>备考进度 {pct.toFixed(0)}%</div>
       </div>
     </div>
   );
 }
 
-function Heatmap({ checkins }) {
-  const [tooltip, setTooltip] = useState(null);
-  const today = todayStr();
+function StatsRow({ calendarStats }) {
+  const s = calendarStats || {};
+  return (
+    <div className="grid-4" style={{marginBottom:14}}>
+      <div className="card" style={{padding:14, textAlign:"center"}}>
+        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>今日</div>
+        <div className="mono" style={{fontSize:24, fontWeight:700}}>{s.todayMinutes || 0}<span style={{fontSize:12, fontWeight:400}}>m</span></div>
+      </div>
+      <div className="card" style={{padding:14, textAlign:"center"}}>
+        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>本月</div>
+        <div className="mono" style={{fontSize:24, fontWeight:700}}>{Math.round((s.monthMinutes || 0)/60)}<span style={{fontSize:12, fontWeight:400}}>h</span></div>
+        <div style={{fontSize:10, color:"var(--text-secondary)"}}>{s.monthDays || 0}天</div>
+      </div>
+      <div className="card" style={{padding:14, textAlign:"center"}}>
+        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>连续</div>
+        <div className="mono" style={{fontSize:24, fontWeight:700}}>{s.streak || 0}<span style={{fontSize:12, fontWeight:400}}>天</span></div>
+        <div style={{fontSize:10, color:"var(--text-secondary)"}}>💪</div>
+      </div>
+      <div className="card" style={{padding:14, textAlign:"center"}}>
+        <div style={{fontSize:10, color:"var(--text-muted)", fontWeight:500, letterSpacing:1, marginBottom:4}}>总计</div>
+        <div className="mono" style={{fontSize:24, fontWeight:700}}>{s.totalDays || 0}</div>
+        <div style={{fontSize:10, color:"var(--text-secondary)"}}>学习天数</div>
+      </div>
+    </div>
+  );
+}
 
-  // Build date→minutes map
-  const dateMap = {};
+function HeatmapCalendar({ checkins }) {
+  const todayStr = today();
+  const year = parseInt(todayStr.slice(0, 4));
+  const month = parseInt(todayStr.slice(5, 7));
+
+  // Build map: date -> minutes
+  const map = {};
   (checkins || []).forEach(c => {
-    if (c.date) dateMap[c.date] = (dateMap[c.date] || 0) + (c.minutes || 0);
+    if (c.date && c.minutes > 0 && c.date <= todayStr) {
+      map[c.date] = (map[c.date] || 0) + c.minutes;
+    }
   });
 
-  // Generate last 20 weeks (140 days)
-  const weeks = [];
-  const endDate = new Date(today);
-  // Go to next Saturday to end the grid
-  endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
-  const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - 20 * 7 + 1);
+  // Generate calendar for current month
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDow = new Date(year, month - 1, 1).getDay(); // 0=Sun
 
-  let d = new Date(startDate);
-  let currentWeek = [];
-  while (d <= endDate) {
-    const ds = d.toISOString().split("T")[0];
-    const mins = dateMap[ds] || 0;
-    const future = ds > today;
-    let level = 0;
-    if (!future && mins > 0) {
-      if (mins <= 30) level = 1;
-      else if (mins <= 60) level = 2;
-      else if (mins <= 120) level = 3;
-      else level = 4;
-    }
-    currentWeek.push({ date: ds, mins, level, future });
-    if (currentWeek.length === 7) {
-      weeks.push(currentWeek);
-      currentWeek = [];
-    }
-    d.setDate(d.getDate() + 1);
+  function level(mins) {
+    if (!mins || mins <= 0) return 0;
+    if (mins <= 30) return 1;
+    if (mins <= 60) return 2;
+    if (mins <= 120) return 3;
+    return 4;
   }
-  if (currentWeek.length > 0) weeks.push(currentWeek);
 
-  // Month labels
-  const months = [];
-  let lastMonth = -1;
-  weeks.forEach((w, i) => {
-    const m = new Date(w[0].date).getMonth();
-    if (m !== lastMonth) {
-      months.push({ index: i, label: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"][m] });
-      lastMonth = m;
-    }
-  });
+  const cells = [];
+  // Add empty cells for days before month start
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    cells.push({ day: d, date: ds, mins: map[ds] || 0 });
+  }
+
+  const dayLabels = ["日","月","火","水","木","金","土"];
+  const monthNames = ["","1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 
   return (
-    <div className="card fade-in fade-in-d2">
-      <div className="card-title"><span>📅</span> 学習カレンダー</div>
-      <div className="heatmap-wrap" style={{ position: "relative" }}>
-        <div className="heatmap-months" style={{ paddingLeft: 0 }}>
-          {months.map((m, i) => (
-            <span key={i} style={{ marginLeft: m.index * 15, position: "absolute" }}>{m.label}</span>
-          ))}
-        </div>
-        <div className="heatmap-grid" style={{ marginTop: 18 }}>
-          {weeks.map((week, wi) => (
-            <div className="heatmap-col" key={wi}>
-              {week.map((cell, di) => (
-                <div
-                  key={di}
-                  className={`heatmap-cell ${cell.future ? "" : cell.level > 0 ? `lv${cell.level}` : ""}`}
-                  style={cell.future ? { opacity: 0.3 } : {}}
-                  title={`${cell.date}: ${cell.mins}分`}
-                  onMouseEnter={(e) => setTooltip({ x: e.clientX, y: e.clientY, text: `${cell.date}: ${cell.mins}分` })}
-                  onMouseLeave={() => setTooltip(null)}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-        {tooltip && (
-          <div className="tooltip" style={{ left: tooltip.x + 10, top: tooltip.y - 30, position: "fixed" }}>
-            {tooltip.text}
-          </div>
-        )}
+    <div className="card">
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
+        <div className="card-title" style={{margin:0}}>📅 Study Calendar</div>
+        <div style={{fontSize:15, fontWeight:600, color:"var(--text)"}}>{year}年{month}月</div>
       </div>
-      <div className="heatmap-legend">
-        <span>少</span>
-        <div className="heatmap-cell" />
-        <div className="heatmap-cell lv1" />
-        <div className="heatmap-cell lv2" />
-        <div className="heatmap-cell lv3" />
-        <div className="heatmap-cell lv4" />
-        <span>多</span>
+      
+      {/* Day headers */}
+      <div style={{display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:2, marginBottom:6}}>
+        {dayLabels.map((dl, i) => (
+          <div key={i} style={{textAlign:"center", fontSize:11, color:"var(--text-muted)", fontWeight:500, padding:"2px 0"}}>{dl}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div style={{display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:3}}>
+        {cells.map((cell, i) => {
+          if (!cell) return <div key={i} />;
+          const isToday = cell.date === todayStr;
+          const isFuture = cell.date > todayStr;
+          const lv = isFuture ? -1 : level(cell.mins);
+          const colors = ["#f0ece6", "#d4edda", "#a3d9a5", "#6bc46d", "#3aaa3c"];
+          const bg = lv < 0 ? "#fafaf7" : colors[lv];
+          return (
+            <div key={i} className="tooltip" data-tip={cell.mins > 0 ? `${cell.date}: ${cell.mins}分` : cell.date}
+              style={{
+                aspectRatio:"1", borderRadius:6, background: bg,
+                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                outline: isToday ? "2px solid var(--text)" : "none",
+                outlineOffset: -1,
+                opacity: isFuture ? 0.35 : 1,
+              }}>
+              <div style={{fontSize:13, fontWeight: isToday ? 700 : (cell.mins > 0 ? 600 : 400), color: isToday ? "var(--text)" : (cell.mins > 0 ? "#2d5a2d" : "var(--text-secondary)")}}>{cell.day}</div>
+              {cell.mins > 0 && !isFuture && (
+                <div style={{fontSize:9, color:"#3a8a3a", fontWeight:500}}>{cell.mins}m</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:4, marginTop:12, fontSize:10, color:"var(--text-muted)"}}>
+        <span>Less</span>
+        {["#f0ece6","#d4edda","#a3d9a5","#6bc46d","#3aaa3c"].map((c,i) => (
+          <div key={i} style={{width:12, height:12, borderRadius:3, background:c}} />
+        ))}
+        <span>More</span>
       </div>
     </div>
   );
 }
 
-function MasteryProgress({ data }) {
-  const summary = data?.summary || {};
-  const bySubject = summary.bySubject || {};
-  const total = summary.totalItems || 1;
+function MasteryProgress({ studyData }) {
+  if (!studyData?.bySubject) return null;
+  const subjects = Object.entries(studyData.bySubject).filter(([k]) => SUBJECTS.includes(k));
 
   return (
-    <div className="card fade-in fade-in-d3">
-      <div className="card-title"><span>📊</span> Mastery Progress</div>
-
-      {/* Overall bar */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>
-          <span>全体 ({summary.totalItems || 0} items)</span>
-          <span className="mono">{summary.totalReviewed || 0} studied</span>
-        </div>
-        <div className="mastery-bar-wrap">
-          <div className="mastery-bar-seg" style={{ width: `${(summary.totalGreen / total * 100)}%`, background: "var(--green)" }} />
-          <div className="mastery-bar-seg" style={{ width: `${(summary.totalYellow / total * 100)}%`, background: "var(--yellow)" }} />
-        </div>
-        <div className="mastery-legend">
-          <span><span className="mastery-dot" style={{ background: "var(--green)" }} />{summary.totalGreen || 0} 🟢</span>
-          <span><span className="mastery-dot" style={{ background: "var(--yellow)" }} />{summary.totalYellow || 0} 🟡</span>
-          <span><span className="mastery-dot" style={{ background: "rgba(255,255,255,0.1)" }} />{total - (summary.totalGreen || 0) - (summary.totalYellow || 0)} 未</span>
-        </div>
-      </div>
-
-      {/* Per subject */}
-      {SUBJECTS.map(subj => {
-        const s = bySubject[subj];
-        if (!s) return null;
-        const t = s.total || 1;
+    <div className="card">
+      <div className="card-title">📊 Mastery Progress</div>
+      {subjects.map(([subj, d]) => {
+        const gPct = d.total > 0 ? (d.green / d.total * 100) : 0;
+        const yPct = d.total > 0 ? (d.yellow / d.total * 100) : 0;
+        const rPct = d.total > 0 ? (d.red / d.total * 100) : 0;
         return (
-          <div key={subj} style={{ marginBottom: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 3 }}>
-              <span>{SUBJECT_ICONS[subj]} {subj} ({s.total})</span>
-              <span className="mono">{s.green}🟢 {s.yellow}🟡 {s.red}🔴</span>
+          <div key={subj} style={{marginBottom:12}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4}}>
+              <div style={{display:"flex", alignItems:"center", gap:6}}>
+                <span className={`subj-badge subj-${subj}`}>{SUBJ_EMOJI[subj]} {subj}</span>
+              </div>
+              <div style={{fontSize:11, color:"var(--text-secondary)"}}>
+                <span style={{color:"var(--green)", fontWeight:600}}>{d.green}</span>
+                <span style={{color:"var(--text-muted)"}}> / </span>
+                <span style={{color:"var(--yellow)"}}>{d.yellow}</span>
+                <span style={{color:"var(--text-muted)"}}> / </span>
+                <span style={{color:"var(--red)"}}>{d.red}</span>
+                <span style={{color:"var(--text-muted)"}}> · {d.total}題</span>
+              </div>
             </div>
-            <div className="mastery-bar-wrap" style={{ height: 5 }}>
-              <div className="mastery-bar-seg" style={{ width: `${s.green / t * 100}%`, background: "var(--green)" }} />
-              <div className="mastery-bar-seg" style={{ width: `${s.yellow / t * 100}%`, background: "var(--yellow)" }} />
-              <div className="mastery-bar-seg" style={{ width: `${s.red / t * 100}%`, background: "var(--red)", opacity: 0.5 }} />
+            <div className="mastery-bar">
+              <div style={{width:`${gPct}%`, background:"var(--green)"}} />
+              <div style={{width:`${yPct}%`, background:"var(--yellow)"}} />
+              <div style={{width:`${rPct}%`, background:"var(--red)"}} />
+            </div>
+            <div style={{fontSize:10, color:"var(--text-muted)", marginTop:2}}>
+              已学习: {d.reviewed}/{d.total} · 掌握率: {gPct.toFixed(0)}%
             </div>
           </div>
         );
@@ -601,199 +574,243 @@ function MasteryProgress({ data }) {
 }
 
 function DueToday({ items }) {
-  const [showAll, setShowAll] = useState(false);
   if (!items || items.length === 0) {
     return (
-      <div className="card fade-in fade-in-d3">
-        <div className="card-title"><span>📋</span> 今日の復習 (0)</div>
-        <div style={{ textAlign: "center", padding: 20, color: "var(--text-muted)", fontSize: 13 }}>
-          🎉 今日はタスクなし！自由に学習しよう
+      <div className="card">
+        <div className="card-title">📋 今日待复习</div>
+        <div style={{textAlign:"center", padding:"20px 0", color:"var(--text-muted)", fontSize:13}}>
+          🎉 没有待复习的项目
         </div>
       </div>
     );
   }
-  const display = showAll ? items : items.slice(0, 8);
+
+  function priBadge(pri) {
+    if (pri.includes("S")) return <span className="pri-badge pri-S">S</span>;
+    if (pri.includes("A")) return <span className="pri-badge pri-A">A</span>;
+    if (pri.includes("B")) return <span className="pri-badge pri-B">B</span>;
+    if (pri.includes("C")) return <span className="pri-badge pri-C">C</span>;
+    return null;
+  }
+
+  function masteryBg(m) {
+    if (m === "🔴") return "var(--red-light)";
+    if (m === "🟡") return "var(--yellow-light)";
+    return "var(--green-light)";
+  }
+
   return (
-    <div className="card fade-in fade-in-d3">
-      <div className="card-title"><span>📋</span> 今日の復習 ({items.length})</div>
-      {display.map((item, i) => (
-        <div className="due-item" key={i}>
-          <span className="due-mastery">{item.mastery || "⬜"}</span>
-          <span className="due-name">{item.name}</span>
-          <span className="due-badge" style={{
-            background: item.subject === "CS" ? "rgba(99,102,241,0.15)" :
-                         item.subject === "AI" ? "rgba(59,130,246,0.15)" :
-                         item.subject === "HCI" ? "rgba(34,197,94,0.15)" :
-                         item.subject === "SE" ? "rgba(249,115,22,0.15)" :
-                         "rgba(234,179,8,0.15)",
-            color: SUBJECT_COLORS[item.subject] || "var(--text-dim)",
-          }}>{item.subject}</span>
-        </div>
+    <div className="card">
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
+        <div className="card-title" style={{margin:0}}>📋 今日待复習 ({items.length})</div>
+      </div>
+      {items.slice(0, 15).map((item, i) => (
+        <a key={i} className="due-item" href={item.url} target="_blank" rel="noopener" style={{background: i % 2 === 0 ? "transparent" : "var(--bg)"}}>
+          <span className={`subj-badge subj-${item.subject}`} style={{fontSize:10, padding:"1px 6px"}}>{item.subject}</span>
+          <span className="due-item-name">{item.name}</span>
+          {item.priority && priBadge(item.priority)}
+          {item.mastery && <span style={{fontSize:12}}>{item.mastery}</span>}
+        </a>
       ))}
-      {items.length > 8 && (
-        <button onClick={() => setShowAll(!showAll)}
-          style={{ width: "100%", padding: 8, background: "none", border: "1px solid var(--card-border)", borderRadius: 8, color: "var(--text-dim)", cursor: "pointer", fontSize: 12, marginTop: 8, fontFamily: "inherit" }}>
-          {showAll ? "折りたたむ" : `残り ${items.length - 8} 件を表示`}
-        </button>
+      {items.length > 15 && (
+        <div style={{textAlign:"center", fontSize:12, color:"var(--text-muted)", padding:"8px 0"}}>
+          +{items.length - 15} more items
+        </div>
       )}
     </div>
   );
 }
 
-function PhaseBar({ data }) {
-  const today = new Date(todayStr());
+function WeeklySchedule() {
+  const dow = dayOfWeek();
+  return (
+    <div className="card">
+      <div className="card-title">📅 Weekly Schedule</div>
+      {WEEKLY.map((w, i) => (
+        <div key={i} className={`week-row ${w.day === dow ? "active" : ""}`}>
+          <div className="week-day">{w.day}</div>
+          <span style={{marginRight:8}}>
+            <span style={{width:8, height:8, borderRadius:"50%", background:SUBJ_COLOR[w.subj], display:"inline-block"}} />
+          </span>
+          <span className={`subj-badge subj-${w.subj}`} style={{marginRight:8, fontSize:10}}>{SUBJ_EMOJI[w.subj]} {w.subj}</span>
+          <span className="week-subject">{w.task}</span>
+          <span className="week-time">{w.mins}m</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PhaseProgress({ studyData, calendarStats }) {
   const phase = curPhase();
-  const summary = data?.summary || {};
-  const totalItems = summary.totalItems || 0;
-  const totalGreen = summary.totalGreen || 0;
-  const totalYellow = summary.totalYellow || 0;
-  // ✅ Fix: use totalReviewed from backend (not green+yellow+red)
-  const reviewed = summary.totalReviewed || 0;
+  const phaseIdx = phase.idx;
+  const totalItems = studyData?.totalItems || 0;
+  const totalGreen = studyData?.totalGreen || 0;
+  const totalYellow = studyData?.totalYellow || 0;
+  const reviewed = studyData?.totalReviewed || 0; // Only actually studied items
 
   const phaseTargets = {
-    1: { label: "知識点カバー率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "学習済/総数" },
-    2: { label: "過去問完了率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "1回以上" },
-    3: { label: "習得率", calc: () => totalItems > 0 ? Math.round(((totalGreen + totalYellow) / totalItems) * 100) : 0, desc: "🟢+🟡" },
-    4: { label: "完全習得率", calc: () => totalItems > 0 ? Math.round((totalGreen / totalItems) * 100) : 0, desc: "🟢のみ" },
+    0: { label: "知识点覆盖率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "已学習/総項目数" },
+    1: { label: "过去問完成率", calc: () => totalItems > 0 ? Math.round((reviewed / totalItems) * 100) : 0, desc: "至少做过一次的题目" },
+    2: { label: "掌握率", calc: () => totalItems > 0 ? Math.round(((totalGreen + totalYellow) / totalItems) * 100) : 0, desc: "🟢+🟡 / 総数" },
+    3: { label: "完全掌握率", calc: () => totalItems > 0 ? Math.round((totalGreen / totalItems) * 100) : 0, desc: "🟢 / 総数" },
   };
-  const target = phaseTargets[phase.num] || phaseTargets[1];
+
+  const target = phaseTargets[phaseIdx] || phaseTargets[0];
   const pct = target.calc();
 
   return (
-    <div className="card fade-in fade-in-d4">
-      <div className="card-title"><span>🎯</span> Phase Progress</div>
-      <div className="phase-highlight" style={{ background: `${phase.color}08`, borderColor: `${phase.color}30` }}>
-        <div className="phase-row">
-          <span style={{ fontSize: 14, fontWeight: 700, color: phase.color }}>▸ {phase.name}</span>
-          <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: phase.color }}>{pct}%</span>
+    <div className="card">
+      <div className="card-title">🎯 Phase Progress</div>
+      
+      {/* Active phase */}
+      <div style={{padding:"14px 16px", background:`${phase.color}08`, borderRadius:12, border:`1.5px solid ${phase.color}25`, marginBottom:14}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6}}>
+          <span style={{fontSize:14, fontWeight:700, color:phase.color}}>▸ {phase.name}</span>
+          <span className="mono" style={{fontSize:22, fontWeight:700, color:phase.color}}>{pct}%</span>
         </div>
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>{phase.desc}</div>
-        <div className="phase-progress-bar">
-          <div className="phase-progress-fill" style={{ width: `${Math.min(pct, 100)}%`, background: phase.color }} />
+        <div style={{fontSize:11, color:"var(--text-secondary)", marginBottom:8}}>{phase.desc}</div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{width:`${Math.min(pct,100)}%`, background:phase.color}} />
         </div>
-        <div className="phase-row" style={{ marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{target.label}: {target.desc}</span>
+        <div style={{display:"flex", justifyContent:"space-between", marginTop:6}}>
+          <span style={{fontSize:10, color:"var(--text-muted)"}}>{target.label}: {target.desc}</span>
         </div>
       </div>
 
+      {/* Other phases */}
       {PHASES.map((p, i) => {
-        const isCurrent = i + 1 === phase.num;
-        const past = today > new Date(p.end);
-        const future = today < new Date(p.start);
-        if (isCurrent) return null;
+        if (i === phaseIdx) return null;
+        const t = today();
+        const past = t > p.end;
+        const future = t < p.start;
         return (
-          <div key={i} className="phase-timeline" style={{ opacity: future ? 0.3 : 1 }}>
-            <div className="phase-row" style={{ marginBottom: 3 }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)" }}>{p.name}</span>
-              <span className="mono" style={{ fontSize: 10, color: "var(--text-muted)" }}>{past ? "✅ 完了" : `${p.start.slice(5)}~`}</span>
+          <div key={i} style={{marginBottom:6, padding:"6px 12px", opacity: future ? 0.35 : 1}}>
+            <div style={{display:"flex", justifyContent:"space-between", marginBottom:3}}>
+              <span style={{fontSize:12, color:"var(--text-secondary)"}}>{p.name}</span>
+              <span className="mono" style={{fontSize:10, color:"var(--text-muted)"}}>{past ? "✅ 完了" : `${p.start.slice(5)}~`}</span>
             </div>
-            <div style={{ height: 2, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
-              <div style={{ height: "100%", width: past ? "100%" : "0%", background: past ? "#555" : p.color, borderRadius: 2 }} />
+            <div className="progress-track" style={{height:3}}>
+              <div className="progress-fill" style={{height:"100%", width:past?"100%":"0%", background:past?"#ccc":p.color}} />
             </div>
           </div>
         );
       })}
-    </div>
-  );
-}
 
-function WeeklyPlan() {
-  const dayOfWeek = new Date().getDay(); // 0=Sun
-  const dayMap = [6, 0, 1, 2, 3, 4, 5]; // Map JS day to our array index (Mon=0)
-  const todayIdx = dayMap[dayOfWeek];
-
-  return (
-    <div className="card fade-in fade-in-d4">
-      <div className="card-title"><span>📅</span> 週間計画</div>
-      <div className="week-grid">
-        {WEEK_PLAN.map((w, i) => (
-          <div key={i} className={`week-cell ${i === todayIdx ? "today" : ""}`}>
-            <div className="week-day">{w.day}</div>
-            <div className="week-icon">{w.icon}</div>
-            <div className="week-subject">{w.subject}</div>
-          </div>
-        ))}
+      {/* Summary stats */}
+      <div className="grid-3" style={{marginTop:12}}>
+        <div className="stat-box">
+          <div className="stat-label">学習天数</div>
+          <div className="stat-value">{calendarStats?.totalDays || 0}</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-label">已掌握</div>
+          <div className="stat-value" style={{color:"var(--green)"}}>{totalGreen}</div>
+          <div className="stat-sub">/{totalItems}</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-label">已学習</div>
+          <div className="stat-value">{reviewed}</div>
+          <div className="stat-sub">/{totalItems}</div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Timer({ onSave }) {
-  const [seconds, setSeconds] = useState(0);
+function StudyTimer({ onSaved }) {
+  const [subject, setSubject] = useState("");
   const [running, setRunning] = useState(false);
-  const [subject, setSubject] = useState("CS");
+  const [elapsed, setElapsed] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const startRef = useRef(null);
   const intervalRef = useRef(null);
 
-  useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
-    } else {
-      clearInterval(intervalRef.current);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [running]);
+  function start() {
+    if (!subject) return;
+    startRef.current = Date.now();
+    setRunning(true);
+    setSaved(false);
+    setElapsed(0);
+    intervalRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 1000);
+  }
 
-  const handleSave = async () => {
-    if (seconds < 60) return;
+  function stop() {
+    clearInterval(intervalRef.current);
     setRunning(false);
-    const minutes = Math.round(seconds / 60);
-    const today = todayStr();
+  }
+
+  async function save() {
+    const mins = Math.round(elapsed / 60);
+    if (mins < 1) return;
+    const todayStr = today();
     try {
-      await fetch(`${API_BASE}?action=create-log`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: `${subject} 学習`, date: today, minutes, method: "タイマー" }),
+      await fetchAPI("create-log", {
+        title: `${subject} 学習`,
+        date: todayStr,
+        minutes: mins,
+        method: "Timer",
       });
-      await fetch(`${API_BASE}?action=create-checkin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${today} 打卡`,
-          date: today,
-          minutes,
-          phase: curPhase().name,
-          dayType: [0, 6].includes(new Date().getDay()) ? "休日" : "工作日",
-          [subject.toLowerCase()]: true,
-        }),
+      await fetchAPI("create-checkin", {
+        date: todayStr,
+        minutes: mins,
+        [subject.toLowerCase()]: true,
       });
-      setSeconds(0);
-      if (onSave) onSave();
+      setSaved(true);
+      setElapsed(0);
+      if (onSaved) onSaved();
     } catch (e) {
-      console.error("Save failed:", e);
+      console.error(e);
     }
-  };
+  }
+
+  function reset() {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setElapsed(0);
+    setSaved(false);
+  }
+
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
 
   return (
-    <div className="card fade-in fade-in-d5">
-      <div className="card-title"><span>⏱</span> 学習タイマー</div>
-      <div className="timer-section">
-        <div className="timer-subject-pills">
-          {SUBJECTS.map(s => (
-            <button key={s} className={`pill ${subject === s ? "active" : ""}`} onClick={() => setSubject(s)}>
-              {SUBJECT_ICONS[s]} {s}
+    <div className="card">
+      <div className="card-title">⏱ Study Timer</div>
+      
+      <div className="timer-subject-btns">
+        {SUBJECTS.map(s => (
+          <button key={s} className={`subj-btn ${subject === s ? "active" : ""}`} onClick={() => !running && setSubject(s)}>
+            {SUBJ_EMOJI[s]} {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="timer-display">{mm}:{ss}</div>
+
+      <div style={{display:"flex", justifyContent:"center", gap:10}}>
+        {!running && !elapsed && (
+          <button className="timer-btn btn-start" onClick={start} disabled={!subject}>
+            ▶ Start
+          </button>
+        )}
+        {running && (
+          <button className="timer-btn btn-stop" onClick={stop}>
+            ⏸ Stop
+          </button>
+        )}
+        {!running && elapsed > 0 && !saved && (
+          <>
+            <button className="timer-btn btn-save" onClick={save}>
+              💾 Save ({Math.round(elapsed/60)}min)
             </button>
-          ))}
-        </div>
-        <div className="timer-display">{formatTime(seconds)}</div>
-        <div className="timer-controls">
-          {!running ? (
-            <button className="btn btn-primary" onClick={() => setRunning(true)}>
-              {seconds > 0 ? "▶ 再開" : "▶ スタート"}
-            </button>
-          ) : (
-            <button className="btn btn-secondary" onClick={() => setRunning(false)}>⏸ 一時停止</button>
-          )}
-          {seconds > 0 && !running && (
-            <>
-              <button className="btn btn-primary" onClick={handleSave}>💾 保存</button>
-              <button className="btn btn-danger" onClick={() => setSeconds(0)}>✕ リセット</button>
-            </>
-          )}
-        </div>
-        {seconds > 0 && (
-          <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-            {Math.round(seconds / 60)} 分経過 · {subject}
-          </div>
+            <button className="timer-btn btn-outline" onClick={reset}>Reset</button>
+          </>
+        )}
+        {saved && (
+          <div style={{fontSize:14, color:"var(--green)", fontWeight:600, padding:"10px 0"}}>✅ 保存成功!</div>
         )}
       </div>
     </div>
@@ -801,34 +818,43 @@ function Timer({ onSave }) {
 }
 
 function RecentLogs({ logs }) {
-  if (!logs || logs.length === 0) return null;
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="card">
+        <div className="card-title">📝 最近の復習記録</div>
+        <div style={{textAlign:"center", padding:"16px 0", color:"var(--text-muted)", fontSize:13}}>
+          まだ記録がありません。Timer で学習を始めましょう!
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="card fade-in fade-in-d5">
-      <div className="card-title"><span>📝</span> 最近の復習</div>
-      {logs.slice(0, 10).map((log, i) => (
-        <div className="log-item" key={i}>
-          <span style={{ marginRight: 8 }}>{log.mastery || "⬜"}</span>
-          <span className="log-title">{log.title}</span>
-          <span className="log-meta">{log.date?.slice(5)} · {log.minutes}分 · {log.subject}</span>
+    <div className="card">
+      <div className="card-title">📝 最近の復習記録</div>
+      {logs.slice(0, 8).map((l, i) => (
+        <div key={i} style={{display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom: i < 7 ? "1px solid var(--border)" : "none"}}>
+          <span className={`subj-badge subj-${l.subject}`} style={{fontSize:10, padding:"1px 6px"}}>{l.subject || "?"}</span>
+          <span style={{flex:1, fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{l.title}</span>
+          <span className="mono" style={{fontSize:11, color:"var(--text-muted)"}}>{l.minutes}m</span>
+          <span style={{fontSize:11, color:"var(--text-muted)"}}>{l.date?.slice(5)}</span>
         </div>
       ))}
     </div>
   );
 }
 
-// ===== Main App =====
+// ── Main App ──────────────────────────────────────────
+
 function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("dashboard");
 
-  const fetchData = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}?action=all`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json);
+      const d = await fetchAPI("all");
+      setData(d);
       setError(null);
     } catch (e) {
       setError(e.message);
@@ -837,71 +863,74 @@ function App() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   if (loading) {
     return (
-      <div className="app">
-        <div className="loading">
-          <div className="spinner" />
-          <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Loading dashboard...</div>
-        </div>
+      <div className="loading">
+        <div className="loading-spinner" />
+        <div style={{fontSize:13}}>Loading Dashboard...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="app">
-        <div className="loading">
-          <div style={{ fontSize: 32 }}>⚠️</div>
-          <div style={{ color: "var(--red)", fontSize: 13 }}>エラー: {error}</div>
-          <button className="btn btn-primary" onClick={() => { setLoading(true); fetchData(); }}>再試行</button>
+      <div className="dashboard">
+        <div className="card" style={{textAlign:"center", padding:40}}>
+          <div style={{fontSize:20, marginBottom:8}}>⚠️</div>
+          <div style={{fontSize:14, color:"var(--red)"}}>接続エラー</div>
+          <div style={{fontSize:12, color:"var(--text-secondary)", marginTop:4}}>{error}</div>
+          <button className="timer-btn btn-outline" style={{marginTop:12}} onClick={loadData}>再試行</button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="app">
-      <Header data={data} />
+  const summary = data?.summary || {};
+  const calStats = data?.calendarStats || {};
 
-      <div className="tab-nav">
-        <button className={`tab-btn ${tab === "dashboard" ? "active" : ""}`} onClick={() => setTab("dashboard")}>📊 Dashboard</button>
-        <button className={`tab-btn ${tab === "study" ? "active" : ""}`} onClick={() => setTab("study")}>📋 復習</button>
-        <button className={`tab-btn ${tab === "timer" ? "active" : ""}`} onClick={() => setTab("timer")}>⏱ タイマー</button>
+  return (
+    <div className="dashboard">
+      <div className="header">
+        <div className="header-title">京大社情</div>
+        <div className="header-main">Study Dashboard</div>
+        <div className="header-sub">{today()} · がんばれ! 🌸</div>
       </div>
 
-      {tab === "dashboard" && (
-        <>
-          <QuickStats data={data} />
-          <Heatmap checkins={data?.checkins} />
-          <MasteryProgress data={data} />
-          <PhaseBar data={data} />
-          <WeeklyPlan />
-          <RecentLogs logs={data?.logs} />
-        </>
-      )}
+      {/* Row 1: Countdown + Stats */}
+      <CountdownCard daysLeft={summary.daysUntilExam} />
+      <StatsRow calendarStats={calStats} />
 
-      {tab === "study" && (
-        <>
-          <QuickStats data={data} />
-          <DueToday items={data?.dueItems} />
-          <MasteryProgress data={data} />
-        </>
-      )}
+      {/* Row 2: Calendar + Timer */}
+      <div className="grid-2">
+        <HeatmapCalendar checkins={data?.checkins} />
+        <StudyTimer onSaved={loadData} />
+      </div>
 
-      {tab === "timer" && (
-        <>
-          <Timer onSave={fetchData} />
-          <RecentLogs logs={data?.logs} />
-        </>
-      )}
+      {/* Row 3: Mastery + Due Today */}
+      <div className="grid-2">
+        <MasteryProgress studyData={summary} />
+        <DueToday items={data?.dueItems} />
+      </div>
+
+      {/* Row 4: Weekly Schedule + Phase Progress */}
+      <div className="grid-2">
+        <WeeklySchedule />
+        <PhaseProgress studyData={summary} calendarStats={calStats} />
+      </div>
+
+      {/* Row 5: Recent Logs */}
+      <RecentLogs logs={data?.logs} />
+
+      <div style={{textAlign:"center", padding:"20px 0", fontSize:11, color:"var(--text-muted)"}}>
+        Built with 💛 for Chi · v2.0
+      </div>
     </div>
   );
 }
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
