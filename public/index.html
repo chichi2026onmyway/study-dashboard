@@ -953,16 +953,38 @@ function renderSchedule(d) {
   const calHtml = GCAL_URL
     ? `<div class="gcal-embed"><iframe src="${GCAL_URL}" frameborder="0" scrolling="no"></iframe></div>`
     : `<div class="gcal-embed"><div class="gcal-setup">
-        <h3>📅 Google Calendar 連携</h3>
-        <p>Google Calendar を埋め込んで、学習スケジュールを表示できます。</p>
-        <div class="steps"><ol>
-          <li>Google Calendar → ⚙️ 設定を開く</li>
-          <li>対象カレンダー → 「カレンダーの統合」</li>
-          <li>「このカレンダーの公開URL」をコピー</li>
-          <li>index.html の <code>GCAL_URL</code> に貼り付け</li>
-        </ol></div>
-        <p style="margin-top:10px;font-size:11px;color:var(--text-muted)">
-          形式例: <code>https://calendar.google.com/calendar/embed?src=YOUR_ID&ctz=Asia/Tokyo</code>
+        <h3>📅 カレンダー連携</h3>
+        <p>学習プランを自動でカレンダーに同期して、Apple Watch でリマインダーを受け取れます。</p>
+        <div class="steps" style="margin-top:14px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px">📱 Apple Calendar / iWatch 連携 (推奨)</div>
+          <ol>
+            <li><b>iPhone</b> → 設定 → カレンダー → アカウント → 照会するカレンダーを追加</li>
+            <li>下記のURLを貼り付け:</li>
+          </ol>
+          <div style="margin:8px 0;padding:10px;background:var(--accent-light);border-radius:8px;border:1px solid #f0dcc8">
+            <code id="icsUrl" style="font-size:10px;word-break:break-all;background:none;padding:0;display:block">${window.location.origin}/api/notion?action=ics</code>
+            <button onclick="copyIcsUrl()" style="margin-top:6px;padding:5px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">📋 URLをコピー</button>
+          </div>
+          <ol start="3">
+            <li>Apple Calendar が毎日自動更新 → Apple Watch にリマインダー通知</li>
+          </ol>
+        </div>
+        <div class="steps" style="margin-top:12px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px">🔗 Google Calendar 連携</div>
+          <ol>
+            <li>Google Calendar → 他のカレンダー → URL で追加</li>
+            <li>同じICS URLを貼り付け</li>
+          </ol>
+        </div>
+        <div class="steps" style="margin-top:12px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px">📊 Notion Calendar 連携</div>
+          <ol>
+            <li>Notion Calendar → Settings → Subscriptions → Add</li>
+            <li>同じICS URLを貼り付け</li>
+          </ol>
+        </div>
+        <p style="margin-top:12px;font-size:11px;color:var(--text-muted)">
+          ※ 各10分前にリマインダー通知 · 毎日の学習プランが自動反映されます
         </p>
       </div></div>`;
   return `${renderSmartRec(d)}${calHtml}${renderWeekPlan()}`;
@@ -1160,6 +1182,16 @@ function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + (type || '');
   clearTimeout(window._tt); window._tt = setTimeout(() => t.classList.remove('show'), 3000);
+}
+function copyIcsUrl() {
+  const url = `${window.location.origin}/api/notion?action=ics`;
+  navigator.clipboard.writeText(url).then(() => showToast('📋 URLをコピーしました！', 'success')).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('📋 URLをコピーしました！', 'success');
+  });
 }
 
 // ===== Resize =====
