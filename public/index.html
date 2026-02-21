@@ -1,3 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>京大社情 Study Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;600;700;800&family=Noto+Sans+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#f5f4f0; font-family:'Noto Sans JP','Noto Sans SC',-apple-system,sans-serif; }
+.due-row { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; background:#f8f8f5; margin-bottom:6px; border-left:3px solid #ccc; }
+.due-info { flex:1; min-width:0; }
+.due-info strong { display:block; font-size:13px; color:#333; }
+.due-info small { font-size:11px; color:#999; }
+.tag-new { font-size:10px; padding:1px 5px; border-radius:4px; background:#E3F2FD; color:#1565C0; margin-right:4px; }
+.tag-review { font-size:10px; padding:1px 5px; border-radius:4px; background:#FFF3E0; color:#E65100; margin-right:4px; }
+.mastery-btns { display:flex; gap:3px; flex-shrink:0; }
+.mastery-btns button { background:none; border:1px solid #ddd; border-radius:6px; padding:3px 6px; font-size:14px; cursor:pointer; transition:transform .15s; }
+.mastery-btns button:hover { transform:scale(1.15); }
+.mastery-btns button:disabled { opacity:.4; cursor:not-allowed; }
+.gcal-box { text-align:center; margin-top:8px; }
+.gcal-btn { display:inline-block; padding:8px 18px; background:#1a73e8; color:#fff; border-radius:8px; font-size:12px; font-weight:600; text-decoration:none; }
+.gcal-box small { display:block; font-size:10px; color:#aaa; margin-top:4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
 // ─── 配置 ───
@@ -506,3 +537,6 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
