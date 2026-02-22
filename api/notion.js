@@ -6,6 +6,7 @@ const DB_CHECKIN = process.env.DB_CHECKIN;
 
 function todayJST() { return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' })); }
 function dateStrJST() { const d = todayJST(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function notionUrl(id) { return `https://notion.so/${id.replace(/-/g, '')}`; }
 
 async function queryAll(dbId, filter, sorts) {
   let results = [], cursor, pages = 0;
@@ -18,19 +19,85 @@ async function queryAll(dbId, filter, sorts) {
   return results;
 }
 
+// ===== PARSE: Study Item =====
 function parseStudyItem(p) {
   const props = p.properties;
-  return { id: p.id, name: props.Name?.title?.[0]?.plain_text || '', subject: props.Subject?.select?.name || '', type: props.Type?.select?.name || '', mastery: props.Mastery?.select?.name || '', priority: props.Priority?.select?.name || '', chapter: props.Chapter?.select?.name || '', year: props.Year?.select?.name || '', difficulty: props.Difficulty?.select?.name || '', redoDate: props['Redo Date']?.date?.start || '', note: props.Note?.rich_text?.[0]?.plain_text || '', relatedKnowledge: props['Related Knowledge']?.rich_text?.[0]?.plain_text || '', timeSpent: props['Time Spent']?.number || 0, num: props.Num?.rich_text?.[0]?.plain_text || '' };
-}
-function parseLog(p) {
-  const props = p.properties;
-  return { id: p.id, title: props.Title?.title?.[0]?.plain_text || '', subject: props.Subject?.rollup?.array?.[0]?.select?.name || '', mastery: props.Mastery?.select?.name || '', method: props.Method?.select?.name || '', timeSpent: props['Time Spent (min)']?.number || 0, reviewDate: props['Review Date']?.date?.start || '', startTime: props['Start Time']?.date?.start || '', endTime: props['End Time']?.date?.start || '', notes: props.Notes?.rich_text?.[0]?.plain_text || '', studyItemIds: (props['Study Item']?.relation || []).map(r => r.id) };
-}
-function parseCheckin(p) {
-  const props = p.properties;
-  return { id: p.id, name: props.Name?.title?.[0]?.plain_text || '', date: props.Date?.date?.start || '', minutes: props.Minutes?.number || 0, phase: props.Phase?.select?.name || '', mood: props.Mood?.select?.name || '', satisfaction: props.Satisfaction?.select?.name || '', dayType: props['Day Type']?.select?.name || '', whatIDid: props['What I Did']?.rich_text?.[0]?.plain_text || '', pomodoros: props.Pomodoros?.number || 0, cs: props.CS?.checkbox || false, ai: props.AI?.checkbox || false, hci: props.HCI?.checkbox || false, se: props.SE?.checkbox || false, ir: props.IR?.checkbox || false, earlyRise: props['早起']?.checkbox || false, earlySleep: props['早睡']?.checkbox || false, exercise: props['运动']?.checkbox || false, reading: props['阅读']?.checkbox || false, meditation: props['冥想']?.checkbox || false, noTakeout: props['不点外卖']?.checkbox || false };
+  return {
+    id: p.id,
+    url: notionUrl(p.id),
+    name: props.Name?.title?.[0]?.plain_text || '',
+    subject: props.Subject?.select?.name || '',
+    type: props.Type?.select?.name || '',
+    mastery: props.Mastery?.select?.name || '',
+    priority: props.Priority?.select?.name || '',
+    chapter: props.Chapter?.select?.name || '',
+    year: props.Year?.select?.name || '',
+    difficulty: props.Difficulty?.select?.name || '',
+    redoDate: props['Redo Date']?.date?.start || '',
+    note: props.Note?.rich_text?.[0]?.plain_text || '',
+    relatedKnowledge: props['Related Knowledge']?.rich_text?.[0]?.plain_text || '',
+    timeSpent: props['Time Spent']?.number || 0,
+    num: props.Num?.rich_text?.[0]?.plain_text || '',
+  };
 }
 
+// ===== PARSE: Review Log =====
+// FIX: Read Duration from formula field, fallback to Start/End Time calculation
+function parseLog(p) {
+  const props = p.properties;
+
+  // 1. Try Duration (min) formula
+  let timeSpent = 0;
+  const durFormula = props['Duration (min)'];
+  if (durFormula?.formula?.number != null) {
+    timeSpent = Math.round(durFormula.formula.number);
+  }
+
+  // 2. Fallback: calculate from Start Time / End Time
+  const startTime = props['Start Time']?.date?.start || '';
+  const endTime = props['End Time']?.date?.start || '';
+  if (timeSpent <= 0 && startTime && endTime) {
+    const diff = new Date(endTime) - new Date(startTime);
+    if (diff > 0) timeSpent = Math.round(diff / 60000);
+  }
+
+  return {
+    id: p.id,
+    url: notionUrl(p.id),
+    title: props.Title?.title?.[0]?.plain_text || '',
+    subject: props.Subject?.rollup?.array?.[0]?.select?.name || '',
+    mastery: props.Mastery?.select?.name || '',
+    method: props.Method?.select?.name || '',
+    timeSpent,
+    reviewDate: props['Review Date']?.date?.start || '',
+    startTime,
+    endTime,
+    notes: props.Notes?.rich_text?.[0]?.plain_text || '',
+    studyItemIds: (props['Study Item']?.relation || []).map(r => r.id),
+  };
+}
+
+// ===== PARSE: Check-in =====
+function parseCheckin(p) {
+  const props = p.properties;
+  return {
+    id: p.id, name: props.Name?.title?.[0]?.plain_text || '',
+    date: props.Date?.date?.start || '', minutes: props.Minutes?.number || 0,
+    phase: props.Phase?.select?.name || '', mood: props.Mood?.select?.name || '',
+    satisfaction: props.Satisfaction?.select?.name || '',
+    dayType: props['Day Type']?.select?.name || '',
+    whatIDid: props['What I Did']?.rich_text?.[0]?.plain_text || '',
+    pomodoros: props.Pomodoros?.number || 0,
+    cs: props.CS?.checkbox || false, ai: props.AI?.checkbox || false,
+    hci: props.HCI?.checkbox || false, se: props.SE?.checkbox || false,
+    ir: props.IR?.checkbox || false,
+    earlyRise: props['早起']?.checkbox || false, earlySleep: props['早睡']?.checkbox || false,
+    exercise: props['运动']?.checkbox || false, reading: props['阅读']?.checkbox || false,
+    meditation: props['冥想']?.checkbox || false, noTakeout: props['不点外卖']?.checkbox || false,
+  };
+}
+
+// ===== DAILY PLAN =====
 function priorityOrder(pri) {
   if (!pri) return 4;
   if (pri.includes('S')) return 0;
@@ -45,17 +112,16 @@ function generateDailyPlan(parsedItems, parsedLogs, today) {
   const dow = now.getDay();
   const isWeekend = dow === 0 || dow === 6;
 
-  // Items that have actual study logs
   const studiedIds = new Set();
   parsedLogs.forEach(l => l.studyItemIds.forEach(id => studiedIds.add(id)));
 
-  // 1. Review: items with logs AND redoDate <= today
+  // 1. Review: actually studied + due
   const reviewItems = parsedItems.filter(item => {
     if (!item.redoDate || item.redoDate > today) return false;
     return studiedIds.has(item.id) || item.timeSpent > 0;
   });
 
-  // 2. New: items never studied (even if they have pre-set Redo Dates)
+  // 2. New: never studied
   const unstudied = parsedItems.filter(item => {
     if (studiedIds.has(item.id) || item.timeSpent > 0) return false;
     if (!item.name) return false;
@@ -63,8 +129,8 @@ function generateDailyPlan(parsedItems, parsedLogs, today) {
   });
 
   unstudied.sort((a, b) => {
-    const pa = priorityOrder(a.priority), pb = priorityOrder(b.priority);
-    if (pa !== pb) return pa - pb;
+    const d = priorityOrder(a.priority) - priorityOrder(b.priority);
+    if (d !== 0) return d;
     return (a.subject || '').localeCompare(b.subject || '');
   });
 
@@ -91,17 +157,17 @@ function generateDailyPlan(parsedItems, parsedLogs, today) {
     round++;
   }
 
-  // If total is too low, add more new items
+  // Pad if total too low
   const minTotal = isWeekend ? 12 : 8;
   if (reviewItems.length + newItems.length < minTotal) {
-    const selectedIds = new Set(newItems.map(i => i.id));
-    const more = unstudied.filter(i => !selectedIds.has(i.id)).slice(0, minTotal - reviewItems.length - newItems.length);
+    const sel = new Set(newItems.map(i => i.id));
+    const more = unstudied.filter(i => !sel.has(i.id)).slice(0, minTotal - reviewItems.length - newItems.length);
     newItems.push(...more);
   }
 
   const cappedReviews = reviewItems.sort((a, b) => {
-    const pa = priorityOrder(a.priority), pb = priorityOrder(b.priority);
-    if (pa !== pb) return pa - pb;
+    const d = priorityOrder(a.priority) - priorityOrder(b.priority);
+    if (d !== 0) return d;
     const m = { '🔴': 0, '🟡': 1, '🟢': 2 };
     return (m[a.mastery] ?? 3) - (m[b.mastery] ?? 3);
   }).slice(0, maxReview);
@@ -123,21 +189,21 @@ function generateDailyPlan(parsedItems, parsedLogs, today) {
   return { plan, reviewCount: cappedReviews.length, newCount: newItems.length, totalCount: plan.length, estimatedMinutes, isWeekend, unstudiedRemaining: unstudied.length - newItems.length };
 }
 
-// ===== ICS Calendar Feed =====
+// ===== ICS CALENDAR =====
 function generateICS(dailyPlan, today) {
   const now = todayJST();
-  const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-  const reviewItems = dailyPlan.plan.filter(i => i.queueType === 'review');
-  const newItems = dailyPlan.plan.filter(i => i.queueType === 'new');
+  const isWE = now.getDay() === 0 || now.getDay() === 6;
+  const rv = dailyPlan.plan.filter(i => i.queueType === 'review');
+  const nw = dailyPlan.plan.filter(i => i.queueType === 'new');
   const events = [];
 
-  if (isWeekend) {
-    if (reviewItems.length > 0) events.push({ summary: `🔄 復習 (${reviewItems.length}題)`, desc: reviewItems.map(i => `- ${i.subject}: ${i.name}`).join('\\n'), sh: 9, sm: 0, dur: Math.max(30, reviewItems.length * 12) });
-    if (newItems.length > 0) events.push({ summary: `🆕 新規学習 (${newItems.length}題)`, desc: newItems.map(i => `- ${i.subject}: ${i.name}`).join('\\n'), sh: reviewItems.length > 0 ? 11 : 9, sm: 0, dur: Math.max(30, newItems.length * 15) });
+  if (isWE) {
+    if (rv.length > 0) events.push({ summary: `🔄 復習 (${rv.length}題)`, desc: rv.map(i => `${i.subject}: ${i.name}`).join('\\n'), sh: 9, sm: 0, dur: Math.max(30, rv.length * 12) });
+    if (nw.length > 0) events.push({ summary: `🆕 新規学習 (${nw.length}題)`, desc: nw.map(i => `${i.subject}: ${i.name}`).join('\\n'), sh: rv.length > 0 ? 11 : 9, sm: 0, dur: Math.max(30, nw.length * 15) });
     events.push({ summary: '📝 ノート整理 + 打卡', desc: '', sh: 15, sm: 0, dur: 30 });
     events.push({ summary: '🔧 弱点復習', desc: '', sh: 16, sm: 0, dur: 60 });
   } else {
-    events.push({ summary: '📖 通勤学習', desc: reviewItems.slice(0, 3).map(i => `- ${i.subject}: ${i.name}`).join('\\n') || '復習タスク確認', sh: 7, sm: 0, dur: 30 });
+    events.push({ summary: '📖 通勤学習', desc: rv.slice(0, 3).map(i => `${i.subject}: ${i.name}`).join('\\n') || 'Dashboard確認', sh: 7, sm: 0, dur: 30 });
     events.push({ summary: '🔄 昼休み復習', desc: '', sh: 12, sm: 0, dur: 15 });
     if (dailyPlan.plan.length > 0) events.push({ summary: `📚 集中学習 (${dailyPlan.totalCount}題)`, desc: dailyPlan.plan.map(i => `[${i.queueType === 'new' ? 'NEW' : '復習'}] ${i.subject}: ${i.name}`).join('\\n'), sh: 19, sm: 30, dur: Math.max(60, dailyPlan.totalCount * 10) });
     events.push({ summary: '📝 Notion打卡', desc: '', sh: 21, sm: 30, dur: 15 });
@@ -149,12 +215,13 @@ function generateICS(dailyPlan, today) {
     const sh = String(e.sh).padStart(2,'0'), sm = String(e.sm).padStart(2,'0');
     const et = e.sh * 60 + e.sm + e.dur;
     const eh = String(Math.floor(et/60)).padStart(2,'0'), em = String(et%60).padStart(2,'0');
-    ics.push('BEGIN:VEVENT',`UID:study-${df}-${i}@kyodai`,`DTSTART;TZID=Asia/Tokyo:${df}T${sh}${sm}00`,`DTEND;TZID=Asia/Tokyo:${df}T${eh}${em}00`,`SUMMARY:${e.summary}`,`DESCRIPTION:${e.desc || ''}`,`BEGIN:VALARM`,`TRIGGER:-PT10M`,`ACTION:DISPLAY`,`DESCRIPTION:${e.summary}`,`END:VALARM`,'END:VEVENT');
+    ics.push('BEGIN:VEVENT',`UID:study-${df}-${i}@kyodai`,`DTSTART;TZID=Asia/Tokyo:${df}T${sh}${sm}00`,`DTEND;TZID=Asia/Tokyo:${df}T${eh}${em}00`,`SUMMARY:${e.summary}`,`DESCRIPTION:${(e.desc || '').replace(/\n/g, '\\n')}`,`BEGIN:VALARM`,`TRIGGER:-PT10M`,`ACTION:DISPLAY`,`DESCRIPTION:${e.summary}`,`END:VALARM`,'END:VEVENT');
   });
   ics.push('END:VCALENDAR');
   return ics.join('\r\n');
 }
 
+// ===== GET ALL =====
 async function getAll() {
   const today = dateStrJST();
   const [items, logs, checkins] = await Promise.all([
@@ -182,11 +249,10 @@ async function getAll() {
   });
 
   const dueToday = parsedItems.filter(i => i.redoDate && i.redoDate <= today).sort((a, b) => {
-    const po = { '🔴 S 必须掌握': 0, '🟠 A 重要': 1, '🟡 B 建议学': 2, '🟢 C 了解即可': 3 };
-    const d = (po[a.priority]??4) - (po[b.priority]??4);
+    const d = priorityOrder(a.priority) - priorityOrder(b.priority);
     if (d !== 0) return d;
     const m = { '🔴': 0, '🟡': 1, '🟢': 2 };
-    return (m[a.mastery]??3) - (m[b.mastery]??3);
+    return (m[a.mastery] ?? 3) - (m[b.mastery] ?? 3);
   });
 
   const dailyPlan = generateDailyPlan(parsedItems, parsedLogs, today);
@@ -218,23 +284,44 @@ async function getAll() {
   const todayCompletedIds = [];
   parsedLogs.filter(l => l.reviewDate === today).forEach(l => l.studyItemIds.forEach(id => todayCompletedIds.push(id)));
 
-  return { items: parsedItems, logs: parsedLogs.slice(0, 20), checkins: parsedCheckins.slice(0, 60), masteryStats, subjectStats, dueToday, dailyPlan, phaseItems, streak, totalHours: Math.round(totalMinutes / 60 * 10) / 10, daysLeft, today, heatmap, studyDates: Array.from(studyDates), todayCompletedIds };
+  return { items: parsedItems, logs: parsedLogs.slice(0, 30), checkins: parsedCheckins.slice(0, 60), masteryStats, subjectStats, dueToday, dailyPlan, phaseItems, streak, totalHours: Math.round(totalMinutes / 60 * 10) / 10, daysLeft, today, heatmap, studyDates: Array.from(studyDates), todayCompletedIds };
 }
 
+// ===== COMPLETE REVIEW =====
+// FIX: Write Start Time / End Time as proper datetime so Notion Duration formula works
 async function completeReview({ studyItemId, studyItemName, subject, timeSpent, mastery, method, notes, startTime, endTime }) {
   const today = dateStrJST();
-  const logProps = { Title: { title: [{ text: { content: studyItemName || `Review ${today}` } }] }, 'Review Date': { date: { start: today } }, 'Time Spent (min)': { number: timeSpent || 0 } };
+
+  const logProps = {
+    Title: { title: [{ text: { content: studyItemName || `Review ${today}` } }] },
+    'Review Date': { date: { start: today } },
+  };
+
   if (mastery) logProps.Mastery = { select: { name: mastery } };
   if (method) logProps.Method = { select: { name: method } };
   if (notes) logProps.Notes = { rich_text: [{ text: { content: notes } }] };
-  if (startTime) logProps['Start Time'] = { date: { start: startTime } };
-  if (endTime) logProps['End Time'] = { date: { start: endTime } };
-  if (studyItemId) logProps['Study Item'] = { relation: [{ id: studyItemId }] };
-  const logPage = await notion.pages.create({ parent: { database_id: DB_LOG }, properties: logProps });
+
+  // FIX: Write proper datetime for Start/End Time so Duration formula calculates correctly
+  if (startTime) {
+    logProps['Start Time'] = { date: { start: startTime } };
+  }
+  if (endTime) {
+    logProps['End Time'] = { date: { start: endTime } };
+  }
 
   if (studyItemId) {
+    logProps['Study Item'] = { relation: [{ id: studyItemId }] };
+  }
+
+  const logPage = await notion.pages.create({ parent: { database_id: DB_LOG }, properties: logProps });
+
+  // Update study item mastery + redo date
+  if (studyItemId) {
     const up = {};
-    if (mastery) { const mm = { '🟢 掌握': '🟢', '🟡 半熟': '🟡', '🔴 不会': '🔴' }; if (mm[mastery]) up.Mastery = { select: { name: mm[mastery] } }; }
+    if (mastery) {
+      const mm = { '🟢 掌握': '🟢', '🟡 半熟': '🟡', '🔴 不会': '🔴' };
+      if (mm[mastery]) up.Mastery = { select: { name: mm[mastery] } };
+    }
     const nd = new Date(todayJST());
     if (mastery === '🟢 掌握') nd.setDate(nd.getDate() + 14);
     else if (mastery === '🟡 半熟') nd.setDate(nd.getDate() + 3);
@@ -243,15 +330,23 @@ async function completeReview({ studyItemId, studyItemName, subject, timeSpent, 
     await notion.pages.update({ page_id: studyItemId, properties: up });
   }
 
+  // Update/create checkin
   try {
+    // Calculate minutes from start/end
+    let mins = timeSpent || 0;
+    if (mins <= 0 && startTime && endTime) {
+      const diff = new Date(endTime) - new Date(startTime);
+      if (diff > 0) mins = Math.round(diff / 60000);
+    }
+
     const ec = await notion.databases.query({ database_id: DB_CHECKIN, filter: { property: 'Date', date: { equals: today } } });
     if (ec.results.length > 0) {
       const ex = ec.results[0]; const cm = ex.properties.Minutes?.number || 0;
-      const up = { Minutes: { number: cm + (timeSpent || 0) } };
+      const up = { Minutes: { number: cm + mins } };
       if (subject) { const sm = { CS:'CS', AI:'AI', HCI:'HCI', SE:'SE', IR:'IR' }; if (sm[subject]) up[sm[subject]] = { checkbox: true }; }
       await notion.pages.update({ page_id: ex.id, properties: up });
     } else {
-      const np = { Name: { title: [{ text: { content: `Day ${today}` } }] }, Date: { date: { start: today } }, Minutes: { number: timeSpent || 0 }, Phase: { select: { name: 'Phase 1 基础' } }, 'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } } };
+      const np = { Name: { title: [{ text: { content: `Day ${today}` } }] }, Date: { date: { start: today } }, Minutes: { number: mins }, Phase: { select: { name: 'Phase 1 基础' } }, 'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } } };
       if (subject) { const sm = { CS:'CS', AI:'AI', HCI:'HCI', SE:'SE', IR:'IR' }; if (sm[subject]) np[sm[subject]] = { checkbox: true }; }
       await notion.pages.create({ parent: { database_id: DB_CHECKIN }, properties: np });
     }
@@ -260,6 +355,7 @@ async function completeReview({ studyItemId, studyItemName, subject, timeSpent, 
   return { success: true, logId: logPage.id };
 }
 
+// ===== VERCEL HANDLER =====
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
