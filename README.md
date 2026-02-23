@@ -1,4 +1,4 @@
-# 🎯 京大社情 Study Dashboard v2
+# 🎯 Study Dashboard v2
 
 ## 📁 项目结构
 ```
