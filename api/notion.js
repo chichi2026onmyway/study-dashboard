@@ -3,6 +3,7 @@ const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const DB_2026 = process.env.DB_2026;
 const DB_LOG = process.env.DB_LOG;
 const DB_CHECKIN = process.env.DB_CHECKIN;
+const DB_AI_TERM = process.env.DB_AI_TERM;
 
 function todayJST() { return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' })); }
 function dateStrJST() { const d = todayJST(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -19,12 +20,11 @@ async function queryAll(dbId, filter, sorts) {
   return results;
 }
 
-// ===== PARSE: Study Item =====
+// ===== PARSE: Study Item (2026 DB) =====
 function parseStudyItem(p) {
   const props = p.properties;
   return {
-    id: p.id,
-    url: notionUrl(p.id),
+    id: p.id, url: notionUrl(p.id),
     name: props.Name?.title?.[0]?.plain_text || '',
     subject: props.Subject?.select?.name || '',
     type: props.Type?.select?.name || '',
@@ -38,42 +38,53 @@ function parseStudyItem(p) {
     relatedKnowledge: props['Related Knowledge']?.rich_text?.[0]?.plain_text || '',
     timeSpent: props['Time Spent']?.number || 0,
     num: props.Num?.rich_text?.[0]?.plain_text || '',
+    source: '2026', // tag source
+  };
+}
+
+// ===== PARSE: AI Terminology =====
+function parseAITerm(p) {
+  const props = p.properties;
+  return {
+    id: p.id, url: notionUrl(p.id),
+    name: props.Terminology?.title?.[0]?.plain_text || '',
+    definition: props.Definition?.rich_text?.[0]?.plain_text || '',
+    lec: props.Lec?.select?.name || '',
+    part: props.Part?.select?.name || '',
+    priority: props.Priority?.select?.name || '',
+    mastery: props.Mastery?.select?.name || '',
+    redoDate: props['Redo Date']?.date?.start || '',
+    status: props['']?.status?.name || '',
+    subject: 'AI', // always AI
+    source: 'aiTerm', // tag source
   };
 }
 
 // ===== PARSE: Review Log =====
-// FIX: Read Duration from formula field, fallback to Start/End Time calculation
 function parseLog(p) {
   const props = p.properties;
-
-  // 1. Try Duration (min) formula
   let timeSpent = 0;
   const durFormula = props['Duration (min)'];
   if (durFormula?.formula?.number != null) {
     timeSpent = Math.round(durFormula.formula.number);
   }
-
-  // 2. Fallback: calculate from Start Time / End Time
   const startTime = props['Start Time']?.date?.start || '';
   const endTime = props['End Time']?.date?.start || '';
   if (timeSpent <= 0 && startTime && endTime) {
     const diff = new Date(endTime) - new Date(startTime);
     if (diff > 0) timeSpent = Math.round(diff / 60000);
   }
-
   return {
-    id: p.id,
-    url: notionUrl(p.id),
+    id: p.id, url: notionUrl(p.id),
     title: props.Title?.title?.[0]?.plain_text || '',
     subject: props.Subject?.rollup?.array?.[0]?.select?.name || '',
     mastery: props.Mastery?.select?.name || '',
     method: props.Method?.select?.name || '',
-    timeSpent,
-    reviewDate: props['Review Date']?.date?.start || '',
-    startTime,
-    endTime,
+    timeSpent, reviewDate: props['Review Date']?.date?.start || '',
+    startTime, endTime,
     notes: props.Notes?.rich_text?.[0]?.plain_text || '',
     studyItemIds: (props['Study Item']?.relation || []).map(r => r.id),
+    aiTermIds: (props['AI Term']?.relation || []).map(r => r.id),
   };
 }
 
@@ -97,115 +108,83 @@ function parseCheckin(p) {
   };
 }
 
-// ===== DAILY PLAN =====
+// ===== PRIORITY HELPERS =====
 function priorityOrder(pri) {
   if (!pri) return 4;
-  if (pri.includes('S')) return 0;
-  if (pri.includes('A')) return 1;
-  if (pri.includes('B')) return 2;
-  if (pri.includes('C')) return 3;
+  if (pri.includes('S') || pri === 'Critical') return 0;
+  if (pri.includes('A') || pri === 'High') return 1;
+  if (pri.includes('B') || pri === 'Medium') return 2;
+  if (pri.includes('C') || pri === 'Low') return 3;
   return 4;
 }
 
-function generateDailyPlan(parsedItems, parsedLogs, today) {
-  const now = todayJST();
-  const dow = now.getDay();
-  const isWeekend = dow === 0 || dow === 6;
+// ===== DAILY PLAN: Only push previously-studied items that are due =====
+function generateDailyPlan(parsedItems, parsedAITerms, parsedLogs, today) {
+  const studiedItemIds = new Set();
+  const studiedTermIds = new Set();
+  parsedLogs.forEach(l => {
+    l.studyItemIds.forEach(id => studiedItemIds.add(id));
+    l.aiTermIds.forEach(id => studiedTermIds.add(id));
+  });
 
-  const studiedIds = new Set();
-  parsedLogs.forEach(l => l.studyItemIds.forEach(id => studiedIds.add(id)));
-
-  // 1. Review: actually studied + due
-  const reviewItems = parsedItems.filter(item => {
+  // Only push items that have been reviewed before AND are due
+  const dueStudyItems = parsedItems.filter(item => {
     if (!item.redoDate || item.redoDate > today) return false;
-    return studiedIds.has(item.id) || item.timeSpent > 0;
+    return studiedItemIds.has(item.id) || item.timeSpent > 0;
   });
 
-  // 2. New: never studied
-  const unstudied = parsedItems.filter(item => {
-    if (studiedIds.has(item.id) || item.timeSpent > 0) return false;
-    if (!item.name) return false;
-    return true;
+  const dueAITerms = parsedAITerms.filter(term => {
+    if (!term.redoDate || term.redoDate > today) return false;
+    return studiedTermIds.has(term.id);
   });
 
-  unstudied.sort((a, b) => {
-    const d = priorityOrder(a.priority) - priorityOrder(b.priority);
-    if (d !== 0) return d;
-    return (a.subject || '').localeCompare(b.subject || '');
-  });
-
-  const dailyNewTarget = isWeekend ? 10 : 6;
-  const maxReview = isWeekend ? 15 : 10;
-
-  // Subject-balanced round-robin
-  const buckets = {};
-  unstudied.forEach(item => {
-    const sub = item.subject || 'Other';
-    if (!buckets[sub]) buckets[sub] = [];
-    buckets[sub].push(item);
-  });
-  const newItems = [];
-  const subs = Object.keys(buckets);
-  let round = 0;
-  while (newItems.length < dailyNewTarget && round < 50) {
-    let added = false;
-    for (const sub of subs) {
-      if (newItems.length >= dailyNewTarget) break;
-      if (buckets[sub].length > 0) { newItems.push(buckets[sub].shift()); added = true; }
-    }
-    if (!added) break;
-    round++;
-  }
-
-  // Pad if total too low
-  const minTotal = isWeekend ? 12 : 8;
-  if (reviewItems.length + newItems.length < minTotal) {
-    const sel = new Set(newItems.map(i => i.id));
-    const more = unstudied.filter(i => !sel.has(i.id)).slice(0, minTotal - reviewItems.length - newItems.length);
-    newItems.push(...more);
-  }
-
-  const cappedReviews = reviewItems.sort((a, b) => {
+  // Sort by priority then mastery
+  const sortFn = (a, b) => {
     const d = priorityOrder(a.priority) - priorityOrder(b.priority);
     if (d !== 0) return d;
     const m = { '🔴': 0, '🟡': 1, '🟢': 2 };
     return (m[a.mastery] ?? 3) - (m[b.mastery] ?? 3);
-  }).slice(0, maxReview);
+  };
+
+  dueStudyItems.sort(sortFn);
+  dueAITerms.sort(sortFn);
 
   const plan = [
-    ...cappedReviews.map(item => ({ ...item, queueType: 'review' })),
-    ...newItems.map(item => ({ ...item, queueType: 'new' })),
+    ...dueStudyItems.map(item => ({ ...item, queueType: 'review' })),
+    ...dueAITerms.map(term => ({ ...term, queueType: 'review-term' })),
   ];
 
   const estimatedMinutes = plan.reduce((sum, item) => {
-    if (item.queueType === 'review') {
-      if (item.mastery === '🟢') return sum + 5;
-      if (item.mastery === '🟡') return sum + 10;
-      return sum + 15;
-    }
+    if (item.source === 'aiTerm') return sum + 3;
+    if (item.mastery === '🟢') return sum + 5;
+    if (item.mastery === '🟡') return sum + 10;
     return sum + 15;
   }, 0);
 
-  return { plan, reviewCount: cappedReviews.length, newCount: newItems.length, totalCount: plan.length, estimatedMinutes, isWeekend, unstudiedRemaining: unstudied.length - newItems.length };
+  return {
+    plan,
+    reviewCount: dueStudyItems.length,
+    termReviewCount: dueAITerms.length,
+    totalCount: plan.length,
+    estimatedMinutes,
+  };
 }
 
 // ===== ICS CALENDAR =====
 function generateICS(dailyPlan, today) {
   const now = todayJST();
   const isWE = now.getDay() === 0 || now.getDay() === 6;
-  const rv = dailyPlan.plan.filter(i => i.queueType === 'review');
-  const nw = dailyPlan.plan.filter(i => i.queueType === 'new');
+  const plan = dailyPlan.plan || [];
   const events = [];
 
   if (isWE) {
-    if (rv.length > 0) events.push({ summary: `🔄 復習 (${rv.length}題)`, desc: rv.map(i => `${i.subject}: ${i.name}`).join('\\n'), sh: 9, sm: 0, dur: Math.max(30, rv.length * 12) });
-    if (nw.length > 0) events.push({ summary: `🆕 新規学習 (${nw.length}題)`, desc: nw.map(i => `${i.subject}: ${i.name}`).join('\\n'), sh: rv.length > 0 ? 11 : 9, sm: 0, dur: Math.max(30, nw.length * 15) });
+    if (plan.length > 0) events.push({ summary: `🔄 復習 (${plan.length}題)`, desc: plan.map(i => `${i.subject}: ${i.name}`).join('\\n'), sh: 9, sm: 0, dur: Math.max(30, plan.length * 10) });
     events.push({ summary: '📝 ノート整理 + 打卡', desc: '', sh: 15, sm: 0, dur: 30 });
     events.push({ summary: '🔧 弱点復習', desc: '', sh: 16, sm: 0, dur: 60 });
   } else {
-    events.push({ summary: '📖 通勤学習', desc: rv.slice(0, 3).map(i => `${i.subject}: ${i.name}`).join('\\n') || 'Dashboard確認', sh: 7, sm: 0, dur: 30 });
+    events.push({ summary: '📖 通勤学習', desc: plan.slice(0, 3).map(i => `${i.subject}: ${i.name}`).join('\\n') || 'Dashboard確認', sh: 7, sm: 0, dur: 30 });
     events.push({ summary: '🔄 昼休み復習', desc: '', sh: 12, sm: 0, dur: 15 });
-    if (dailyPlan.plan.length > 0) events.push({ summary: `📚 集中学習 (${dailyPlan.totalCount}題)`, desc: dailyPlan.plan.map(i => `[${i.queueType === 'new' ? 'NEW' : '復習'}] ${i.subject}: ${i.name}`).join('\\n'), sh: 19, sm: 30, dur: Math.max(60, dailyPlan.totalCount * 10) });
+    if (plan.length > 0) events.push({ summary: `📚 集中学習 (${plan.length}題)`, desc: plan.map(i => `${i.subject}: ${i.name}`).join('\\n'), sh: 19, sm: 30, dur: Math.max(60, plan.length * 10) });
     events.push({ summary: '📝 Notion打卡', desc: '', sh: 21, sm: 30, dur: 15 });
   }
 
@@ -224,45 +203,64 @@ function generateICS(dailyPlan, today) {
 // ===== GET ALL =====
 async function getAll() {
   const today = dateStrJST();
-  const [items, logs, checkins] = await Promise.all([
+  const queries = [
     queryAll(DB_2026),
     queryAll(DB_LOG, undefined, [{ property: 'Review Date', direction: 'descending' }]),
     queryAll(DB_CHECKIN, undefined, [{ property: 'Date', direction: 'descending' }]),
-  ]);
+  ];
+  // AI Term DB is optional (env var may not be set yet)
+  if (DB_AI_TERM) queries.push(queryAll(DB_AI_TERM));
+  else queries.push(Promise.resolve([]));
+
+  const [items, logs, checkins, aiTerms] = await Promise.all(queries);
+
   const parsedItems = items.map(parseStudyItem);
+  const parsedAITerms = aiTerms.map(parseAITerm);
   const parsedLogs = logs.map(parseLog).filter(l => l.reviewDate && l.reviewDate <= today);
   const parsedCheckins = checkins.map(parseCheckin).filter(c => c.date && c.date <= today && (c.minutes > 0 || c.cs || c.ai || c.hci || c.se || c.ir));
 
-  const itemsWithLogs = new Set();
-  parsedLogs.forEach(l => l.studyItemIds.forEach(id => itemsWithLogs.add(id)));
+  // Track which items/terms have been studied
+  const studiedItemIds = new Set();
+  const studiedTermIds = new Set();
+  parsedLogs.forEach(l => {
+    l.studyItemIds.forEach(id => studiedItemIds.add(id));
+    l.aiTermIds.forEach(id => studiedTermIds.add(id));
+  });
 
+  // Mastery stats (2026 only)
   const masteryStats = { total: parsedItems.length, green: 0, yellow: 0, red: 0, notStudied: 0 };
   const subjectStats = {};
   parsedItems.forEach(item => {
     if (!subjectStats[item.subject]) subjectStats[item.subject] = { total: 0, green: 0, yellow: 0, red: 0, notStudied: 0 };
     subjectStats[item.subject].total++;
-    const studied = itemsWithLogs.has(item.id) || item.timeSpent > 0;
+    const studied = studiedItemIds.has(item.id) || item.timeSpent > 0;
     if (item.mastery === '🟢' && studied) { masteryStats.green++; subjectStats[item.subject].green++; }
     else if (item.mastery === '🟡' && studied) { masteryStats.yellow++; subjectStats[item.subject].yellow++; }
     else if (item.mastery === '🔴' && studied) { masteryStats.red++; subjectStats[item.subject].red++; }
     else { masteryStats.notStudied++; subjectStats[item.subject].notStudied++; }
   });
 
-  const dueToday = parsedItems.filter(i => i.redoDate && i.redoDate <= today).sort((a, b) => {
-    const d = priorityOrder(a.priority) - priorityOrder(b.priority);
-    if (d !== 0) return d;
-    const m = { '🔴': 0, '🟡': 1, '🟢': 2 };
-    return (m[a.mastery] ?? 3) - (m[b.mastery] ?? 3);
+  // AI term mastery stats
+  const aiTermStats = { total: parsedAITerms.length, green: 0, yellow: 0, red: 0, notStudied: 0 };
+  parsedAITerms.forEach(term => {
+    const studied = studiedTermIds.has(term.id);
+    if (term.mastery === '🟢' && studied) aiTermStats.green++;
+    else if (term.mastery === '🟡' && studied) aiTermStats.yellow++;
+    else if (term.mastery === '🔴' && studied) aiTermStats.red++;
+    else aiTermStats.notStudied++;
   });
 
-  const dailyPlan = generateDailyPlan(parsedItems, parsedLogs, today);
+  // Daily plan: only previously-studied items that are due
+  const dailyPlan = generateDailyPlan(parsedItems, parsedAITerms, parsedLogs, today);
 
+  // Phase items
   const phaseItems = {};
   parsedCheckins.forEach(c => { if (c.phase) { if (!phaseItems[c.phase]) phaseItems[c.phase] = { count: 0, totalMinutes: 0 }; phaseItems[c.phase].count++; phaseItems[c.phase].totalMinutes += c.minutes; }});
 
+  // Study dates & streak
   const studyDates = new Set();
-  parsedCheckins.forEach(c => { if (c.minutes > 0) studyDates.add(c.date); });
   parsedLogs.forEach(l => { if (l.timeSpent > 0) studyDates.add(l.reviewDate); });
+  parsedCheckins.forEach(c => { if (c.minutes > 0) studyDates.add(c.date); });
 
   let streak = 0; const sd = todayJST();
   if (studyDates.has(today)) { streak = 1; sd.setDate(sd.getDate() - 1); }
@@ -271,47 +269,68 @@ async function getAll() {
     if (studyDates.has(ds)) { streak++; sd.setDate(sd.getDate() - 1); } else break;
   }
 
+  // FIX: Total hours from Review Logs ONLY (avoid double counting with Check-in)
   let totalMinutes = 0;
-  parsedCheckins.forEach(c => totalMinutes += c.minutes);
   parsedLogs.forEach(l => totalMinutes += l.timeSpent);
 
   const daysLeft = Math.ceil((new Date('2026-08-01T00:00:00+09:00') - todayJST()) / 864e5);
 
+  // Heatmap
   const heatmap = {};
-  parsedCheckins.forEach(c => { if (c.date && c.minutes > 0) heatmap[c.date] = (heatmap[c.date]||0) + c.minutes; });
   parsedLogs.forEach(l => { if (l.reviewDate && l.timeSpent > 0) heatmap[l.reviewDate] = (heatmap[l.reviewDate]||0) + l.timeSpent; });
 
+  // Today completed IDs
   const todayCompletedIds = [];
-  parsedLogs.filter(l => l.reviewDate === today).forEach(l => l.studyItemIds.forEach(id => todayCompletedIds.push(id)));
+  parsedLogs.filter(l => l.reviewDate === today).forEach(l => {
+    l.studyItemIds.forEach(id => todayCompletedIds.push(id));
+    l.aiTermIds.forEach(id => todayCompletedIds.push(id));
+  });
 
-  return { items: parsedItems, logs: parsedLogs.slice(0, 30), checkins: parsedCheckins.slice(0, 60), masteryStats, subjectStats, dueToday, dailyPlan, phaseItems, streak, totalHours: Math.round(totalMinutes / 60 * 10) / 10, daysLeft, today, heatmap, studyDates: Array.from(studyDates), todayCompletedIds };
+  // Group 2026 items by year for free selection
+  const itemsByYear = {};
+  parsedItems.forEach(item => {
+    const yr = item.year || '未分類';
+    if (!itemsByYear[yr]) itemsByYear[yr] = [];
+    itemsByYear[yr].push(item);
+  });
+
+  // Group AI terms by Lec
+  const termsByLec = {};
+  parsedAITerms.forEach(term => {
+    const lec = term.lec || '未分類';
+    if (!termsByLec[lec]) termsByLec[lec] = [];
+    termsByLec[lec].push(term);
+  });
+
+  return {
+    items: parsedItems,
+    aiTerms: parsedAITerms,
+    logs: parsedLogs.slice(0, 30),
+    checkins: parsedCheckins.slice(0, 60),
+    masteryStats, subjectStats, aiTermStats,
+    dailyPlan, phaseItems,
+    streak,
+    totalHours: Math.round(totalMinutes / 60 * 10) / 10,
+    daysLeft, today, heatmap,
+    studyDates: Array.from(studyDates),
+    todayCompletedIds,
+    itemsByYear, termsByLec,
+  };
 }
 
-// ===== COMPLETE REVIEW =====
-// FIX: Write Start Time / End Time as proper datetime so Notion Duration formula works
+// ===== COMPLETE REVIEW (2026 study item) =====
 async function completeReview({ studyItemId, studyItemName, subject, timeSpent, mastery, method, notes, startTime, endTime }) {
   const today = dateStrJST();
-
   const logProps = {
     Title: { title: [{ text: { content: studyItemName || `Review ${today}` } }] },
     'Review Date': { date: { start: today } },
   };
-
   if (mastery) logProps.Mastery = { select: { name: mastery } };
   if (method) logProps.Method = { select: { name: method } };
   if (notes) logProps.Notes = { rich_text: [{ text: { content: notes } }] };
-
-  // FIX: Write proper datetime for Start/End Time so Duration formula calculates correctly
-  if (startTime) {
-    logProps['Start Time'] = { date: { start: startTime } };
-  }
-  if (endTime) {
-    logProps['End Time'] = { date: { start: endTime } };
-  }
-
-  if (studyItemId) {
-    logProps['Study Item'] = { relation: [{ id: studyItemId }] };
-  }
+  if (startTime) logProps['Start Time'] = { date: { start: startTime } };
+  if (endTime) logProps['End Time'] = { date: { start: endTime } };
+  if (studyItemId) logProps['Study Item'] = { relation: [{ id: studyItemId }] };
 
   const logPage = await notion.pages.create({ parent: { database_id: DB_LOG }, properties: logProps });
 
@@ -330,24 +349,115 @@ async function completeReview({ studyItemId, studyItemName, subject, timeSpent, 
     await notion.pages.update({ page_id: studyItemId, properties: up });
   }
 
-  // Update/create checkin
+  // FIX: Update checkin - only set subject checkbox, do NOT add minutes (avoids double counting)
   try {
-    // Calculate minutes from start/end
-    let mins = timeSpent || 0;
-    if (mins <= 0 && startTime && endTime) {
-      const diff = new Date(endTime) - new Date(startTime);
-      if (diff > 0) mins = Math.round(diff / 60000);
-    }
-
     const ec = await notion.databases.query({ database_id: DB_CHECKIN, filter: { property: 'Date', date: { equals: today } } });
     if (ec.results.length > 0) {
-      const ex = ec.results[0]; const cm = ex.properties.Minutes?.number || 0;
-      const up = { Minutes: { number: cm + mins } };
+      const up = {};
       if (subject) { const sm = { CS:'CS', AI:'AI', HCI:'HCI', SE:'SE', IR:'IR' }; if (sm[subject]) up[sm[subject]] = { checkbox: true }; }
-      await notion.pages.update({ page_id: ex.id, properties: up });
+      if (Object.keys(up).length > 0) await notion.pages.update({ page_id: ec.results[0].id, properties: up });
     } else {
-      const np = { Name: { title: [{ text: { content: `Day ${today}` } }] }, Date: { date: { start: today } }, Minutes: { number: mins }, Phase: { select: { name: 'Phase 1 基础' } }, 'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } } };
+      const np = {
+        Name: { title: [{ text: { content: `Day ${today}` } }] },
+        Date: { date: { start: today } },
+        Minutes: { number: 0 },
+        Phase: { select: { name: 'Phase 1 基础' } },
+        'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } },
+      };
       if (subject) { const sm = { CS:'CS', AI:'AI', HCI:'HCI', SE:'SE', IR:'IR' }; if (sm[subject]) np[sm[subject]] = { checkbox: true }; }
+      await notion.pages.create({ parent: { database_id: DB_CHECKIN }, properties: np });
+    }
+  } catch (e) { console.error('Checkin error:', e.message); }
+
+  return { success: true, logId: logPage.id };
+}
+
+// ===== COMPLETE AI TERM REVIEW =====
+async function completeTermReview({ termId, termName, mastery, method, notes, startTime, endTime }) {
+  const today = dateStrJST();
+  const logProps = {
+    Title: { title: [{ text: { content: termName || `Term Review ${today}` } }] },
+    'Review Date': { date: { start: today } },
+  };
+  if (mastery) logProps.Mastery = { select: { name: mastery } };
+  if (method) logProps.Method = { select: { name: method } };
+  if (notes) logProps.Notes = { rich_text: [{ text: { content: notes } }] };
+  if (startTime) logProps['Start Time'] = { date: { start: startTime } };
+  if (endTime) logProps['End Time'] = { date: { start: endTime } };
+  if (termId) logProps['AI Term'] = { relation: [{ id: termId }] };
+
+  const logPage = await notion.pages.create({ parent: { database_id: DB_LOG }, properties: logProps });
+
+  // Update AI term mastery + redo date
+  if (termId) {
+    const up = {};
+    if (mastery) {
+      const mm = { '🟢 掌握': '🟢', '🟡 半熟': '🟡', '🔴 不会': '🔴' };
+      if (mm[mastery]) up.Mastery = { select: { name: mm[mastery] } };
+    }
+    const nd = new Date(todayJST());
+    if (mastery === '🟢 掌握') nd.setDate(nd.getDate() + 14);
+    else if (mastery === '🟡 半熟') nd.setDate(nd.getDate() + 3);
+    else nd.setDate(nd.getDate() + 1);
+    up['Redo Date'] = { date: { start: `${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,'0')}-${String(nd.getDate()).padStart(2,'0')}` } };
+    await notion.pages.update({ page_id: termId, properties: up });
+  }
+
+  // Update checkin AI checkbox
+  try {
+    const ec = await notion.databases.query({ database_id: DB_CHECKIN, filter: { property: 'Date', date: { equals: today } } });
+    if (ec.results.length > 0) {
+      await notion.pages.update({ page_id: ec.results[0].id, properties: { AI: { checkbox: true } } });
+    } else {
+      await notion.pages.create({ parent: { database_id: DB_CHECKIN }, properties: {
+        Name: { title: [{ text: { content: `Day ${today}` } }] },
+        Date: { date: { start: today } }, Minutes: { number: 0 },
+        Phase: { select: { name: 'Phase 1 基础' } },
+        'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } },
+        AI: { checkbox: true },
+      }});
+    }
+  } catch (e) { console.error('Checkin error:', e.message); }
+
+  return { success: true, logId: logPage.id };
+}
+
+// ===== COMPLETE READING SESSION =====
+async function completeReading({ bookName, subject, startTime, endTime, notes }) {
+  const today = dateStrJST();
+  let mins = 0;
+  if (startTime && endTime) {
+    const diff = new Date(endTime) - new Date(startTime);
+    if (diff > 0) mins = Math.round(diff / 60000);
+  }
+
+  const logProps = {
+    Title: { title: [{ text: { content: `📖 ${bookName || 'Reading'}` } }] },
+    'Review Date': { date: { start: today } },
+    Method: { select: { name: '📖 通读' } },
+  };
+  if (startTime) logProps['Start Time'] = { date: { start: startTime } };
+  if (endTime) logProps['End Time'] = { date: { start: endTime } };
+  if (notes) logProps.Notes = { rich_text: [{ text: { content: notes } }] };
+
+  const logPage = await notion.pages.create({ parent: { database_id: DB_LOG }, properties: logProps });
+
+  // Update checkin
+  try {
+    const ec = await notion.databases.query({ database_id: DB_CHECKIN, filter: { property: 'Date', date: { equals: today } } });
+    const sm = { CS:'CS', AI:'AI', HCI:'HCI', SE:'SE', IR:'IR' };
+    if (ec.results.length > 0) {
+      const up = {};
+      if (subject && sm[subject]) up[sm[subject]] = { checkbox: true };
+      if (Object.keys(up).length > 0) await notion.pages.update({ page_id: ec.results[0].id, properties: up });
+    } else {
+      const np = {
+        Name: { title: [{ text: { content: `Day ${today}` } }] },
+        Date: { date: { start: today } }, Minutes: { number: 0 },
+        Phase: { select: { name: 'Phase 1 基础' } },
+        'Day Type': { select: { name: new Date(today).getDay() % 6 === 0 ? '周末' : '工作日' } },
+      };
+      if (subject && sm[subject]) np[sm[subject]] = { checkbox: true };
       await notion.pages.create({ parent: { database_id: DB_CHECKIN }, properties: np });
     }
   } catch (e) { console.error('Checkin error:', e.message); }
@@ -368,6 +478,14 @@ module.exports = async (req, res) => {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       return res.status(200).json(await completeReview(body));
     }
+    if (action === 'complete-term-review' && req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      return res.status(200).json(await completeTermReview(body));
+    }
+    if (action === 'complete-reading' && req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      return res.status(200).json(await completeReading(body));
+    }
     if (action === 'ics' || action === 'calendar.ics') {
       const data = await getAll();
       const ics = generateICS(data.dailyPlan, data.today);
@@ -376,6 +494,6 @@ module.exports = async (req, res) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       return res.status(200).send(ics);
     }
-    return res.status(400).json({ error: 'Use ?action=getAll, ?action=complete-review, or ?action=ics' });
+    return res.status(400).json({ error: 'Unknown action' });
   } catch (err) { console.error('API Error:', err); return res.status(500).json({ error: err.message }); }
 };
